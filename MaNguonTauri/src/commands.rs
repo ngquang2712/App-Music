@@ -12,6 +12,7 @@ use crate::services::artists::ArtistService;
 use crate::services::spotify_api::{SpotifyApi, SpotifyStatus};
 use std::sync::Arc;
 use crate::services::offline::OfflineLibrary;
+use crate::services::personal::{PersonalMusicService, PersonalTrack, PersonalMetadata, ImportResult};
 use tauri::{State, Window};
 
 pub struct AppState {
@@ -20,6 +21,7 @@ pub struct AppState {
     pub soundcloud: Arc<SoundCloudService>,
     pub stream_server: Arc<StreamServer>,
     pub library: Arc<LibraryService>,
+    pub personal: Arc<PersonalMusicService>,
     pub discord: Arc<DiscordService>,
     pub image_uploader: Arc<ImageUploader>,
     pub listening: Arc<ListeningService>,
@@ -120,7 +122,8 @@ pub async fn search_all(query: String, purpose: Option<String>, state: State<'_,
     };
     let (yt_res, sc_res, sp_res, catalog_res) = tokio::join!(yt_fut, sc_fut, sp_fut, catalog);
 
-    if yt_res.is_err() && sc_res.is_err() && sp_res.is_err() && catalog_res.as_ref().map_or(true, |items| items.is_empty()) {
+    let personal_tracks = state.personal.search(q)?;
+    if personal_tracks.is_empty() && yt_res.is_err() && sc_res.is_err() && sp_res.is_err() && catalog_res.as_ref().map_or(true, |items| items.is_empty()) {
         return Err(format!(
             "Không kết nối được các nguồn nhạc. YouTube: {}",
             yt_res.err().unwrap_or_default()
@@ -131,7 +134,8 @@ pub async fn search_all(query: String, purpose: Option<String>, state: State<'_,
     let sc_tracks = sc_res.unwrap_or_default();
     let sp_tracks = sp_res.unwrap_or_default();
 
-    let mut merged = catalog_res.unwrap_or_default();
+    let mut merged = personal_tracks;
+    merged.extend(catalog_res.unwrap_or_default());
     let max_len = yt_tracks.len().max(sc_tracks.len()).max(sp_tracks.len());
 
     for i in 0..max_len {
@@ -165,6 +169,7 @@ pub async fn search_source(
         "spotify" => state.spotify_api.search_tracks(q).await,
         "deezer" => state.spotify.search(q, 50).await,
         "soundcloud" => state.soundcloud.search(q, 50).await,
+        "local" => state.personal.search(q),
         _ => Ok(Vec::new()),
     }
 }
@@ -174,6 +179,7 @@ pub async fn get_stream_url(
     track: Track,
     state: State<'_, AppState>,
 ) -> Result<StreamResult, String> {
+    if track.source == "local" { return personal_stream(&track.id, &state); }
     if matches!(track.catalog_provider.as_deref(), Some("spotify" | "itunes")) {
         return Err("Bài từ danh mục này được mở bằng nút Nghe trên Spotify / Apple Music.".into());
     }
@@ -233,6 +239,7 @@ async fn resolve_direct_stream(track: &Track, state: &AppState) -> Result<Stream
 
 #[tauri::command]
 pub async fn prepare_stream_url(track: Track, state: State<'_, AppState>) -> Result<StreamResult, String> {
+    if track.source == "local" { return personal_stream(&track.id, &state); }
     if matches!(track.catalog_provider.as_deref(), Some("spotify" | "itunes")) {
         return Err("Bài trong danh mục được mở ở dịch vụ gốc.".into());
     }
@@ -264,6 +271,7 @@ pub fn get_offline_library(state: State<'_, AppState>) -> Result<OfflineLibrary,
 
 #[tauri::command]
 pub async fn cache_track_offline(track: Track, state: State<'_, AppState>) -> Result<OfflineLibrary, String> {
+    if track.source == "local" { return Err("Nhạc cá nhân đã được lưu trên máy, không cần tải offline.".into()); }
     if matches!(track.catalog_provider.as_deref(), Some("spotify" | "itunes")) {
         return Err("Bài từ danh mục Spotify / Apple Music chỉ được mở ở dịch vụ gốc.".into());
     }
@@ -294,6 +302,42 @@ pub fn get_library(state: State<'_, AppState>) -> Vec<Track> {
     state.library.get_tracks()
 }
 
+fn personal_stream(id: &str, state: &AppState) -> Result<StreamResult, String> {
+    let (_, entry) = state.personal.file(id)?;
+    Ok(StreamResult { stream_url: state.stream_server.get_cached_stream_url(id, "local", &entry.content_type), content_type: entry.content_type, http_headers: Default::default() })
+}
+
+#[tauri::command]
+pub fn get_personal_music(state: State<'_, AppState>) -> Result<Vec<PersonalTrack>, String> { state.personal.list() }
+
+#[tauri::command]
+pub fn begin_personal_music_upload(file_name: String, size_bytes: u64, state: State<'_, AppState>) -> Result<String, String> {
+    state.personal.begin(file_name, size_bytes)
+}
+
+#[tauri::command]
+pub fn append_personal_music_upload(request: tauri::ipc::Request<'_>, state: State<'_, AppState>) -> Result<u64, String> {
+    let tauri::ipc::InvokeBody::Raw(bytes) = request.body() else { return Err("File nhạc phải được gửi dưới dạng dữ liệu nhị phân.".into()); };
+    let id = request.headers().get("x-upload-id").and_then(|v| v.to_str().ok()).ok_or("Thiếu mã lượt nhập nhạc.")?;
+    let offset = request.headers().get("x-upload-offset").and_then(|v| v.to_str().ok()).and_then(|v| v.parse::<u64>().ok()).ok_or("Thiếu vị trí dữ liệu file.")?;
+    state.personal.append(id, offset, bytes)
+}
+
+#[tauri::command]
+pub fn commit_personal_music_upload(upload_id: String, metadata: PersonalMetadata, state: State<'_, AppState>) -> Result<ImportResult, String> {
+    state.personal.commit(&upload_id, metadata)
+}
+
+#[tauri::command]
+pub fn abort_personal_music_upload(upload_id: String, state: State<'_, AppState>) -> Result<(), String> { state.personal.abort(&upload_id) }
+
+#[tauri::command]
+pub fn delete_personal_music(track_id: String, state: State<'_, AppState>) -> Result<(), String> {
+    state.personal.file(&track_id)?;
+    state.library.update_personal_references(&track_id, None)?;
+    state.personal.remove(&track_id)
+}
+
 #[tauri::command]
 pub fn save_track(track: Track, state: State<'_, AppState>) -> Track {
     state.library.save_track(track)
@@ -309,6 +353,11 @@ pub async fn edit_track(
     reset: Option<bool>,
     state: State<'_, AppState>,
 ) -> Result<Track, String> {
+    if source == "local" {
+        let updated = state.personal.edit(&track_id, title, artist, cover, reset.unwrap_or(false))?;
+        state.library.update_personal_references(&track_id, Some(&updated))?;
+        return Ok(updated);
+    }
     let mut discord_cover_url = None;
     if let Some(ref c) = cover {
         if c.starts_with("data:image/") || (!c.starts_with("http://") && !c.starts_with("https://"))
@@ -404,6 +453,16 @@ pub fn save_playlist(playlist: Playlist, state: State<'_, AppState>) -> Result<P
 
 #[tauri::command]
 pub async fn download_track(track: Track, state: State<'_, AppState>) -> Result<String, String> {
+    if track.source == "local" {
+        let (source, _) = state.personal.file(&track.id)?;
+        let dir = state.library.downloads_dir();
+        tokio::fs::create_dir_all(dir).await.map_err(|e| e.to_string())?;
+        let name: String = track.title.chars().map(|c| if c.is_alphanumeric() || matches!(c, ' ' | '-' | '_') { c } else { '_' }).take(100).collect();
+        let stamp = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_nanos();
+        let destination = dir.join(format!("{name}-{stamp}.mp3"));
+        tokio::fs::copy(source, &destination).await.map_err(|e| e.to_string())?;
+        return Ok(destination.to_string_lossy().into_owned());
+    }
     if matches!(track.catalog_provider.as_deref(), Some("spotify" | "itunes")) {
         return Err("Mở bài từ danh mục trên Spotify / Apple Music để nghe.".into());
     }
@@ -544,7 +603,7 @@ pub async fn update_discord_activity(
     let revision = state.discord.begin_update();
     let config = state.library.get_config();
     if !config.discord_rpc_enabled { return Ok(()); }
-    let mut resolved_cover = cover_url;
+    let mut resolved_cover = if source.as_deref() == Some("local") { None } else { cover_url };
 
     let needs_upload = if let Some(ref c) = resolved_cover {
         c.contains("kn3fi8")
@@ -554,7 +613,7 @@ pub async fn update_discord_activity(
         true
     };
 
-    if config.discord_large_image == "{cover}" && needs_upload {
+    if source.as_deref() != Some("local") && config.discord_large_image == "{cover}" && needs_upload {
         let base64_opt = if let Some(ref c) = resolved_cover {
             if c.starts_with("data:image/") {
                 Some(c.clone())

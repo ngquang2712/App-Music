@@ -26,7 +26,7 @@ function DinhDangThoiLuongBaiHat(track) {
 }
 
 function RutGonTenNguon(source) {
-  return { youtube: 'YT', spotify: 'SP', soundcloud: 'SC' }[source] || String(source || '').toUpperCase();
+  return { youtube: 'YT', spotify: 'SP', soundcloud: 'SC', local: 'CN' }[source] || String(source || '').toUpperCase();
 }
 
 function GiaiQuyetDuongDanAnhBia(track) {

@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="DinhDang.css">
   <link rel="stylesheet" href="GiaoDienMoi.css">
   <link rel="stylesheet" href="TuyChinhUngDung.css">
+  <link rel="stylesheet" href="NhacCaNhan.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -18,7 +19,7 @@
     <header class="top-header global-header">
       <div class="global-brand" data-tauri-drag-region><span class="brand-mark">NQ</span><strong>NgQuang<span>Music App</span></strong></div>
       <div class="header-search-area">
-        <button id="btn-header-home" class="header-home" type="button" title="Trang chủ" aria-label="Trang chủ"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 10 9-7 9 7v10H3Z"/><path d="M9 20v-7h6v7"/></svg></button>
+        <button id="btn-header-home" class="header-home" type="button" title="Trang chủ · Làm mới gợi ý" aria-label="Trang chủ, làm mới gợi ý"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 10 9-7 9 7v10H3Z"/><path d="M9 20v-7h6v7"/></svg></button>
         <div class="search-box">
           <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
           <input type="text" id="search-input" placeholder="Bạn muốn nghe gì hôm nay?" aria-label="Tìm bài hát hoặc nghệ sĩ" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="search-suggestions-list" maxlength="160" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off">
@@ -60,6 +61,10 @@
           <button class="nav-item" data-view="explore">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             <span class="nav-label">Tìm kiếm</span>
+          </button>
+          <button class="nav-item" data-view="personal" title="Thêm file MP3 của bạn vào app">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13M9 8l12-2"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+            <span class="nav-label">Nhạc cá nhân</span><span id="personal-count-badge" class="count-pill">0</span>
           </button>
           <button class="nav-item" data-view="library">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
@@ -271,7 +276,7 @@
       <section id="view-explore" class="view-panel" style="display: none;">
         <div class="search-toolbar">
           <div class="content-tabs" role="group" aria-label="Loại kết quả"><button type="button" class="content-tab active" data-search-type="all" aria-pressed="true">Tất cả</button><button type="button" class="content-tab" data-search-type="artists" aria-pressed="false">Nghệ sĩ</button><button type="button" class="content-tab" data-search-type="tracks" aria-pressed="false">Bài hát</button></div>
-          <div class="source-filters" role="group" aria-label="Nguồn bài hát"><button class="filter-pill active" data-filter="all">Mọi nguồn</button><button class="filter-pill" data-filter="youtube">YouTube</button><button class="filter-pill" data-filter="soundcloud">SoundCloud</button><button class="filter-pill" data-filter="spotify">Spotify</button><button class="filter-pill" data-filter="deezer">Deezer</button></div>
+          <div class="source-filters" role="group" aria-label="Nguồn bài hát"><button class="filter-pill active" data-filter="all">Mọi nguồn</button><button class="filter-pill" data-filter="youtube">YouTube</button><button class="filter-pill" data-filter="soundcloud">SoundCloud</button><button class="filter-pill" data-filter="spotify">Spotify</button><button class="filter-pill" data-filter="deezer">Deezer</button><button class="filter-pill" data-filter="local">Nhạc cá nhân</button></div>
         </div>
         <div id="results-meta" class="section-title-row" style="display: none;">
           <div>
@@ -357,6 +362,16 @@
           <p>Lưu bài hát yêu thích vào đây</p>
           <button id="btn-go-search" class="primary-btn">Tìm nhạc</button>
         </div>
+      </section>
+      <section id="view-personal" class="view-panel" style="display:none">
+        <div class="section-title-row personal-title-row"><div><span class="page-eyebrow">BỘ SƯU TẬP CỦA RIÊNG BẠN</span><h1>Nhạc cá nhân</h1><p id="personal-summary">Đang đọc bộ sưu tập…</p></div><button id="personal-play-all" type="button" class="primary-btn" disabled>Phát tất cả</button></div>
+        <div id="personal-drop-zone" class="personal-drop-zone"><span class="personal-upload-icon" aria-hidden="true">♫</span><div class="personal-drop-copy"><h2>Thêm nhạc của bạn vào app</h2><p>Chọn hoặc kéo thả file MP3 vào đây. Có thể thêm nhiều bài, tối đa 512 MB mỗi file.<br>App giữ bản sao trên máy để bạn nghe offline. File gốc vẫn được giữ.</p></div><button id="personal-choose" type="button" class="primary-btn">Chọn file MP3</button><input id="personal-file-input" type="file" accept=".mp3,audio/mpeg" multiple hidden></div>
+        <section id="personal-import-panel" class="personal-import-panel" hidden aria-busy="false">
+          <div class="personal-import-header"><h2>Thông tin bài hát</h2><div class="personal-cover-picker"><img id="personal-cover-preview" alt="Ảnh bìa sắp thêm" hidden><span id="personal-cover-label">Ảnh bìa tùy chọn</span><button id="personal-cover-choose" type="button" class="outline-btn">Chọn ảnh</button><button id="personal-cover-remove" type="button" class="text-action" disabled>Bỏ ảnh</button><input id="personal-cover-input" type="file" accept="image/jpeg,image/png,image/webp" hidden></div></div>
+          <div id="personal-pending" class="personal-pending"></div><div class="personal-import-actions"><button id="personal-import-start" type="button" class="primary-btn" disabled>Thêm vào app</button><button id="personal-import-cancel" type="button" class="outline-btn">Bỏ lựa chọn</button><progress id="personal-import-progress" max="100" value="0" aria-label="Tiến độ thêm nhạc vào app"></progress></div>
+        </section>
+        <div class="personal-toolbar"><input id="personal-search" type="search" placeholder="Tìm bài hoặc nghệ sĩ trong bộ sưu tập" aria-label="Tìm trong Nhạc cá nhân"><label>Sắp xếp<select id="personal-sort"><option value="recent">Mới thêm</option><option value="title">Tên bài A–Z</option></select></label><button id="personal-refresh" type="button" class="outline-btn">Làm mới</button></div>
+        <p id="personal-status" role="status" aria-live="polite"></p><div id="personal-tracks" class="tracks-grid" hidden></div><div id="personal-empty" class="personal-empty"><h3>Những bài nhạc mang dấu ấn của bạn</h3><p>Thêm bản thu, bản demo hoặc bài MP3 bạn yêu thích. Sau khi thêm, bạn có thể phát, thả tim và đưa vào playlist.</p></div>
       </section>
       <section id="view-offline" class="view-panel" style="display:none">
         <div class="section-title-row offline-title-row"><div><span class="page-eyebrow">ÂM NHẠC LUÔN BÊN BẠN</span><h1>Nhạc offline</h1><p id="offline-summary">Đang đọc những bài đã lưu…</p></div><button id="offline-play-all" type="button" class="primary-btn" disabled>Phát tất cả</button></div>
@@ -887,6 +902,7 @@
           <div class="speed-slider-row"><label for="playback-speed-slider">Nhanh / chậm</label><input type="range" id="playback-speed-slider" min="0.5" max="2" step="0.05" value="1"><output id="playback-speed-value" for="playback-speed-slider">1×</output></div>
           <div class="speed-presets"><button type="button" data-speed-preset="0.5">0,5×</button><button type="button" data-speed-preset="0.75">0,75×</button><button type="button" data-speed-preset="1">1×</button><button type="button" data-speed-preset="1.25">1,25×</button><button type="button" data-speed-preset="1.5">1,5×</button><button type="button" data-speed-preset="2">2×</button></div>
           <label class="speed-pitch-toggle" for="preserve-pitch-input"><input type="checkbox" id="preserve-pitch-input" checked>Giữ cao độ giọng hát</label><p id="speed-mode-description" class="setting-subtitle">Đổi tốc độ, giữ cao độ giọng hát.</p>
+          <p class="setting-subtitle">Nhấn Space để phát / tạm dừng. Giữ Space để tăng gấp đôi tốc độ hiện tại; thả phím để trở về tốc độ cũ.</p>
           <div class="speed-effects"><button id="speed-slow-deep" type="button" class="outline-btn">Chậm &amp; trầm</button><button id="speed-fast-high" type="button" class="outline-btn">Nhanh &amp; cao</button><button id="speed-reset" type="button" class="outline-btn">Về bản gốc</button></div>
         </div>
         <div class="recommendation-settings eq-settings-row">
@@ -1265,6 +1281,7 @@
     <p id="quick-speed-description" class="setting-subtitle" role="status">Cùng bài hát, giữ giọng gốc khi đổi tốc độ.</p>
   </div>
   <div id="clear-offline-modal" class="modal-overlay" hidden><div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="clear-offline-title"><div class="modal-header"><h2 id="clear-offline-title">Xóa bản nhạc offline?</h2></div><p class="setting-subtitle">Xóa các tệp âm thanh đã lưu và hủy những bài đang tải. Bạn cần có mạng để tải lại. Bài yêu thích, playlist và lịch sử nghe vẫn được giữ.</p><div class="modal-footer"><button id="offline-clear-cancel" type="button" class="outline-btn">Giữ lại</button><button id="offline-clear-confirm" type="button" class="primary-btn">Xóa bản offline</button></div></div></div>
+  <div id="personal-delete-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="personal-delete-title" hidden><div class="modal-content"><div class="modal-header"><h2 id="personal-delete-title">Xóa nhạc cá nhân?</h2></div><p class="setting-subtitle">Xóa <strong id="personal-delete-name"></strong> khỏi app, bài yêu thích và các playlist. File MP3 gốc trên máy vẫn được giữ.</p><p id="personal-delete-status" role="status"></p><div class="modal-footer"><button id="personal-delete-cancel" type="button" class="outline-btn">Giữ lại</button><button id="personal-delete-confirm" type="button" class="primary-btn">Xóa khỏi app</button></div></div></div>
   <script src="KetNoiTauri.js"></script>
   <script src="TienIch.js"></script>
   <script src="EqualizerBaiHat.js"></script>
@@ -1275,6 +1292,7 @@
   <script src="ChuanBiBaiTiep.js"></script>
   <script src="GiaoDienMoi.js"></script>
   <script src="TuyChinhUngDung.js"></script>
+  <script src="NhacCaNhan.js"></script>
   <script src="UngDung.js"></script>
 </body>
 </html>

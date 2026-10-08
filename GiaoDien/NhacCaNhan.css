@@ -1,0 +1,43 @@
+.nav-item[data-view="personal"] { grid-column: 1 / -1; }
+#view-personal { gap: 20px; }
+#view-personal [hidden], #personal-delete-modal[hidden] { display: none !important; }
+.personal-title-row { align-items: center; }
+.personal-title-row p { color: var(--text-secondary); margin-top: 8px; }
+.personal-drop-zone { border: 1px dashed rgba(180,156,248,.45); background: linear-gradient(120deg,rgba(157,109,230,.12),rgba(88,129,191,.07)); border-radius: 18px; padding: 24px; display: flex; align-items: center; gap: 20px; }
+.personal-drop-zone.is-dragging { border-color: var(--accent); background: rgba(157,109,230,.22); }
+.personal-upload-icon { width: 58px; height: 58px; flex: 0 0 58px; border-radius: 16px; background: rgba(160,112,235,.2); display: grid; place-items: center; color: #c6adff; font-size: 30px; }
+.personal-drop-copy { flex: 1; min-width: 0; }
+.personal-drop-copy h2 { font-size: 17px; margin: 0 0 7px; }
+.personal-drop-copy p { font-size: 12px; color: var(--text-secondary); margin: 0; line-height: 1.6; }
+.personal-import-panel { background: rgba(255,255,255,.035); border: 1px solid rgba(255,255,255,.09); border-radius: 16px; padding: 18px; }
+.personal-import-header, .personal-import-actions, .personal-cover-picker, .personal-toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.personal-import-header { justify-content: space-between; margin-bottom: 16px; }
+.personal-import-header h2 { font-size: 16px; margin: 0; }
+.personal-cover-picker { font-size: 12px; color: var(--text-secondary); }
+#personal-cover-preview { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; }
+#personal-cover-remove { font-size: 12px; }
+.personal-pending { display: flex; flex-direction: column; gap: 12px; max-height: 340px; overflow-y: auto; padding: 2px; }
+.personal-import-row { display: grid; grid-template-columns: minmax(100px,1fr) minmax(140px,1.2fr) minmax(120px,1fr) 32px; gap: 10px; align-items: center; padding: 12px; border-radius: 10px; background: rgba(255,255,255,.035); }
+.personal-file-info { min-width: 0; }
+.personal-file-info strong { display: block; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.personal-file-info small { color: var(--text-secondary); font-size: 11px; }
+.personal-import-row label { display: flex; flex-direction: column; gap: 5px; font-size: 11px; color: var(--text-secondary); }
+.personal-import-row input, .personal-toolbar input, .personal-toolbar select { background: rgba(255,255,255,.06); color: var(--text-primary); border: 1px solid rgba(255,255,255,.12); border-radius: 8px; padding: 10px; min-width: 0; font: inherit; }
+.personal-import-row input { width: 100%; font-size: 12px; }
+.personal-file-status { grid-column: 1 / 4; font-size: 11px; color: #baacdf; }
+.personal-file-status.is-error, #personal-delete-status { color: #f59aa7; }
+.personal-remove-file { grid-column: 4; grid-row: 1; width: 32px; height: 32px; border: 0; border-radius: 8px; background: rgba(255,255,255,.06); color: var(--text-secondary); font-size: 22px; cursor: pointer; }
+.personal-import-actions { margin-top: 16px; }
+#personal-import-progress { flex: 1; min-width: 100px; accent-color: var(--accent); height: 6px; }
+.personal-toolbar input { flex: 1; min-width: 140px; }
+.personal-toolbar select { max-width: 170px; font-size: 12px; }
+.personal-toolbar select option { background: #242733; }
+.personal-toolbar label { display: flex; align-items: center; gap: 8px; color: var(--text-secondary); font-size: 12px; }
+.personal-empty { text-align: center; padding: 22px; color: var(--text-secondary); font-size: 13px; }
+.personal-empty h3 { color: var(--text-primary); margin-bottom: 8px; }
+#personal-status { min-height: 16px; font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+.personal-delete-track { font-size: 10px; width: 30px; }
+.card-badge.local, .track-page-source-badge.local { background: rgba(128,100,199,.9); }
+#personal-delete-modal { display: flex; }
+#personal-delete-modal .modal-content { max-width: 460px; padding: 24px; }
+@media (max-width: 1179px) { .personal-drop-zone { padding: 18px; gap: 12px; } .personal-upload-icon { display: none; } .personal-import-row { grid-template-columns: minmax(80px,.8fr) minmax(120px,1fr) minmax(100px,1fr) 32px; } }

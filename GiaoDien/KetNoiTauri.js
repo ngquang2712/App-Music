@@ -1,11 +1,11 @@
 (function () {
   'use strict';
 
-  function invoke(command, args) {
+  function invoke(command, args, options) {
     if (!window.__TAURI__ || !window.__TAURI__.core) {
       return Promise.reject(new Error('Hãy chạy app bằng CaiDatVaChay.bat; mở index.html trực tiếp không có backend Tauri.'));
     }
-    return window.__TAURI__.core.invoke(command, args || {});
+    return window.__TAURI__.core.invoke(command, args || {}, options);
   }
 
   function report(error) {
@@ -81,6 +81,12 @@
       });
     },
     layThuVien: function () { return invoke('get_library'); },
+    layNhacCaNhan: function () { return invoke('get_personal_music'); },
+    batDauNhapNhac: function (file) { return invoke('begin_personal_music_upload', { fileName: file.name, sizeBytes: file.size }); },
+    guiDuLieuNhac: function (id, offset, bytes) { return invoke('append_personal_music_upload', bytes, { headers: { 'x-upload-id': id, 'x-upload-offset': String(offset) } }); },
+    hoanTatNhapNhac: function (id, metadata) { return invoke('commit_personal_music_upload', { uploadId: id, metadata: metadata }); },
+    huyNhapNhac: function (id) { return invoke('abort_personal_music_upload', { uploadId: id }); },
+    xoaNhacCaNhan: function (id) { return invoke('delete_personal_music', { trackId: id }); },
     layNhacOffline: function () { return invoke('get_offline_library'); },
     luuBaiOffline: function (value) { return invoke('cache_track_offline', { track: track(value) }); },
     xoaBaiOffline: function (id, source) { return invoke('remove_offline_track', { trackId: id, source: source }); },

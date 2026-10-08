@@ -115,7 +115,7 @@
     return text.trim();
   }
   function renderTemplate(template, track, playing) {
-    var values = { title: track.title || 'Tên bài hát', artist: track.artist || 'Không rõ nghệ sĩ', album: track.album == null ? track.title || 'Tên album' : track.album, source: { youtube: 'YouTube', soundcloud: 'SoundCloud', spotify: 'Spotify' }[track.source] || track.source || 'YouTube', status: playing ? 'Đang phát' : 'Tạm dừng' };
+    var values = { title: track.title || 'Tên bài hát', artist: track.artist || 'Không rõ nghệ sĩ', album: track.album == null ? track.title || 'Tên album' : track.album, source: { youtube: 'YouTube', soundcloud: 'SoundCloud', spotify: 'Spotify', local: 'Nhạc cá nhân' }[track.source] || track.source || 'YouTube', status: playing ? 'Đang phát' : 'Tạm dừng' };
     return shortText(template.replace(/\{(title|artist|album|source|status)\}/g, function (_, name) { return values[name]; }));
   }
   function previewDiscord() {

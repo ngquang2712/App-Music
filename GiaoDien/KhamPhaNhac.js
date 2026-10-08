@@ -248,10 +248,11 @@
     finally { savingGenreMix = false; button.disabled = !genreTracks.length; }
   }
   function localArtistResults(query) {
-    var q = core.text(query), seen = new Set(), list = [];
-    allLocalTracks().forEach(function (t) { var a = fromTrack(t); if (a && core.text(a.name).includes(q) && !seen.has(key(a))) { seen.add(key(a)); list.push(a); } });
-    root.SoThichNhacDaLuu.favoriteArtists.forEach(function (name) { var a = profiles.get(key(name)) || artist({ name: name }); if (core.text(name).includes(q) && !seen.has(key(name))) { seen.add(key(name)); list.push(a); } });
-    return list.slice(0, 8);
+    var taste = root.GoiYAmNhac.thongKe(root.DanhSachBaiHatThuVien || []), list = [];
+    allLocalTracks().forEach(function (t) { var a = fromTrack(t); if (a) { list.push(a); } });
+    taste.topArtists.forEach(function (value) { list.push(profiles.get(value.key) || artist({ name: value.name })); });
+    root.SoThichNhacDaLuu.favoriteArtists.forEach(function (name) { list.push(profiles.get(key(name)) || artist({ name: name })); });
+    return core.rankSearchArtists(list, query, taste).slice(0, 12);
   }
   function sourceMatches(track, source) {
     if (source === 'all') { return true; }
@@ -270,6 +271,7 @@
     return true;
   }
   function resetSearch() {
+    el('search-input').value = ''; el('search-clear-btn').classList.add('hidden');
     searchRun++; searchQuery = ''; searchArtists = []; root.KetQuaTimKiem = []; el('tracks-container').replaceChildren();
     ['search-artists-section', 'search-song-heading', 'search-loader'].forEach(function (id) { hide(el(id), true); });
     el('results-meta').style.display = 'none'; el('empty-state').style.display = 'flex'; hide(el('search-browse-section'), false);
@@ -286,12 +288,12 @@
     var artistTask = api.timKiemNgheSi(query).then(function (result) {
       if (run !== searchRun) { return; }
       var found = Array.isArray(result) ? result : result && result.artists || [], local = localArtistResults(query), names = new Set();
-      searchArtists = found.concat(local).map(remember).filter(function (a) { if (!a || names.has(key(a))) { return false; } names.add(key(a)); return true; }).slice(0, 8);
+      searchArtists = core.rankSearchArtists(found.concat(local).map(remember).filter(Boolean), query, root.GoiYAmNhac.thongKe(root.DanhSachBaiHatThuVien || [])).slice(0, 8);
       renderArtistCards(el('search-artists-grid'), searchArtists);
       el('search-artists-status').textContent = result && result.warning || (searchArtists.length ? searchArtists.length + ' hồ sơ' : 'Chưa tìm thấy nghệ sĩ. Thử tên đầy đủ hoặc bỏ bộ lọc.'); renderSearchTracks();
     }).catch(function () { if (run === searchRun) { searchArtists = localArtistResults(query); renderArtistCards(el('search-artists-grid'), searchArtists); el('search-artists-status').textContent = 'Chưa kết nối được danh mục. Đang dùng nghệ sĩ từ các bài đã có.'; renderSearchTracks(); } });
     var trackTask = (searchSource === 'all' ? api.timKiemTatCa(query) : api.timKiemTheoNguon(searchSource, query)).then(function (tracks) {
-      if (run !== searchRun) { return; } root.KetQuaTimKiem = Array.isArray(tracks) ? tracks : []; renderSearchTracks();
+      if (run !== searchRun) { return; } root.KetQuaTimKiem = core.rankSearchTracks(Array.isArray(tracks) ? tracks : [], query, root.GoiYAmNhac.thongKe(root.DanhSachBaiHatThuVien || []), true); renderSearchTracks();
     }).catch(function (message) { if (run === searchRun) { root.KetQuaTimKiem = []; el('tracks-container').replaceChildren(node('p', 'recommendation-empty', root.DinhDangLoi(message))); } }).finally(function () {
       if (run === searchRun) { el('search-loader').dataset.loading = 'false'; hide(el('search-loader'), true); }
     });
@@ -328,8 +330,8 @@
     document.querySelectorAll('[data-search-type]').forEach(function (button) { button.addEventListener('click', function () {
       searchType = button.dataset.searchType; document.querySelectorAll('[data-search-type]').forEach(function (b) { var active = b.dataset.searchType === searchType; b.classList.toggle('active', active); b.setAttribute('aria-pressed', String(active)); }); renderSearchTracks();
     }); });
-    document.addEventListener('click', function (event) { var target = event.target.closest('[data-jump-view]'); if (target) { root.ChuyenDoiGiaoDien(target.dataset.jumpView, null); } if (event.target.closest('[data-focus-search]')) { focusSearch(); } });
-    el('btn-header-home').addEventListener('click', function () { root.ChuyenDoiGiaoDien('home', null); });
+    document.addEventListener('click', function (event) { var target = event.target.closest('[data-jump-view]'); if (target) { if (target.dataset.jumpView === 'home') { root.LamMoiTrangChu(); } else { root.ChuyenDoiGiaoDien(target.dataset.jumpView, null); } } if (event.target.closest('[data-focus-search]')) { focusSearch(); } });
+    el('btn-header-home').addEventListener('click', function () { root.LamMoiTrangChu(); });
     el('btn-find-artists').addEventListener('click', focusSearch);
     el('btn-artist-back').addEventListener('click', back); el('btn-genre-back').addEventListener('click', function () { root.ChuyenDoiGiaoDien('genres', null); });
     el('btn-heart-artist').addEventListener('click', function () { toggleArtist(currentArtist); });
@@ -356,9 +358,9 @@
     el('btn-disconnect-spotify').addEventListener('click', async function () { try { await api.ngatSpotify(); clearTimeout(spotifyPoll); paintSpotify({}); } catch (message) { warn(message); } });
     pollSpotify();
   }
-  root.KhamPhaNhac = { khoiTao: init, khoiPhuc: restore, doiGiaoDien: onView, timKiem: search, veKetQua: renderSearchTracks, doiNguon: changeSource,
+  root.KhamPhaNhac = { khoiTao: init, khoiPhuc: restore, doiGiaoDien: onView, timKiem: search, xoaTimKiem: resetSearch, veKetQua: renderSearchTracks, doiNguon: changeSource,
     moNgheSi: openArtist, moNgheSiTuBai: openArtistFromTrack, veNgheSiGoiY: function (values) { renderArtistCards(el('home-artists-grid'), values.map(function (value) { return Object.assign({}, fromTrack(value.track || { artist: value.name }), { name: value.name, reason: value.reason }); })); },
     veYeuThich: function () { renderFavoriteArtists(); if (root.GiaoDienHienTai === 'artist') { paintProfile(); } }, capNhatNutTim: function () { paintArtistHearts(); paintGenreHearts(); }, dangLuuTim: function () { return pendingArtists.size > 0 || pendingGenres.size > 0; },
-    laBaiNgoai: isExternal, moBaiNgoai: openExternal, nhanNguon: function (track) { return track.catalogProvider ? providerName(track.catalogProvider) : (track.source === 'spotify' ? 'Deezer' : track.source); },
+    laBaiNgoai: isExternal, moBaiNgoai: openExternal, nhanNguon: function (track) { if (track.source === 'local') { return 'Nhạc cá nhân'; } return track.catalogProvider ? providerName(track.catalogProvider) : (track.source === 'spotify' ? 'Deezer' : track.source); },
     moTheLoai: openGenre, goiYNgheSi: localArtistResults };
 })(window);

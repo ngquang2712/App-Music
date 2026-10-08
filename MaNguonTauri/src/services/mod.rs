@@ -12,3 +12,4 @@ pub mod spotify_api;
 pub mod artists;
 
 pub mod offline;
+pub mod personal;

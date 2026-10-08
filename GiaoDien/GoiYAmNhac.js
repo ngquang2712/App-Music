@@ -16,7 +16,12 @@
   function musicKey(track) {
     var title = text(track.originalTitle || track.title).replace(/\b(official|music video|lyric[s]?|audio|video|mv|hd|4k)\b/g, '').replace(/[^\p{L}\p{N}\s]/gu, ' ').replace(/\s+/g, ' ').trim();
     var name = artistKey(track);
-    if (name && title.indexOf(name + ' ') === 0) { title = title.slice(name.length + 1); }
+    var prefix = text(artistName(track)).replace(/[^\p{L}\p{N}\s]/gu, ' ').replace(/\s+/g, ' ').trim();
+    [prefix, name].forEach(function (value) {
+      if (!value) { return; }
+      if (title.indexOf(value + ' ') === 0) { title = title.slice(value.length + 1); }
+      if (title.endsWith(' ' + value)) { title = title.slice(0, -value.length - 1); }
+    });
     return name + '|' + title;
   }
   var styles = [
@@ -60,35 +65,45 @@
     var classified = classify(track).ids;
     return styles.filter(function (style) { return classified.indexOf(style.id) >= 0 || Array.isArray(track.recommendationGenreHints) && track.recommendationGenreHints.indexOf(style.id) >= 0; }).map(function (style) { return style.id; });
   }
-  function valid(track) { return track && !['spotify', 'itunes'].includes(track.catalogProvider) && track.id != null && String(track.id).length > 0 && ['youtube', 'spotify', 'soundcloud'].indexOf(track.source) >= 0 && track.title; }
+  function valid(track) { return track && !['spotify', 'itunes'].includes(track.catalogProvider) && track.id != null && String(track.id).length > 0 && ['youtube', 'spotify', 'soundcloud', 'local'].indexOf(track.source) >= 0 && (track.source !== 'local' || !root.NhacCaNhan || !root.NhacCaNhan.daTai() || root.NhacCaNhan.coBai(track.id)) && track.title; }
   function cleanTrack(track) {
     var copy = Object.assign({}, track);
-    ['recommendationReason', 'recommendationNew', 'recommendationGenreHints', 'customCoverBase64', 'originalCover', 'localCoverPath', 'discordCoverUrl', 'continueTime', 'continueDuration'].forEach(function (name) { delete copy[name]; });
+    ['recommendationReason', 'recommendationNew', 'recommendationGenreHints', 'suggestionReason', 'customCoverBase64', 'originalCover', 'localCoverPath', 'discordCoverUrl', 'continueTime', 'continueDuration'].forEach(function (name) { delete copy[name]; });
     if (String(copy.cover || '').indexOf('data:') === 0 || String(copy.cover || '').length > 4096) { copy.cover = ''; }
     return copy;
   }
   function qualifies(session) {
-    var duration = Number(session.duration) || Number(session.track.duration) || 0;
+    var duration = Number(session.duration) || Number(session.track && session.track.duration) || 0;
     return Number(session.listenedSeconds) >= (duration > 0 ? Math.min(30, duration / 2) : 30);
   }
-  function buildTaste(profile, library, recent, now, chosenPreferences) {
+  function buildTaste(profile, library, recent, now, chosenPreferences, playlists) {
+    profile = profile || {};
     now = now || Date.now();
-    var taste = { artists: new Map(), styles: new Map(), songs: new Map(), known: new Set(), blocked: new Set(), heard: new Set(), sessions: 0, minutes: 0 };
-    function add(track, weight) {
-      if (!valid(track)) { return; }
+    var taste = { artists: new Map(), styles: new Map(), recentStyles: new Map(), songs: new Map(), known: new Set(), blocked: new Set(), heard: new Set(), sessions: 0, minutes: 0 };
+    (profile.hiddenTracks || []).filter(valid).forEach(function (track) { taste.blocked.add(key(track)); taste.blocked.add(musicKey(track)); });
+    function add(track, weight, artistFactor, recentWeight) {
+      if (!valid(track) || taste.blocked.has(key(track)) || taste.blocked.has(musicKey(track))) { return; }
       var mk = musicKey(track), ak = artistKey(track);
-      var song = taste.songs.get(mk) || { track: track, score: 0, plays: 0, skips: 0, last: 0 };
+      var song = taste.songs.get(mk) || { track: track, score: 0, plays: 0, recentPlays: 0, skips: 0, recentSkips: 0, last: 0, lastPlayed: 0, liked: false };
       song.score += weight;
       taste.songs.set(mk, song);
       if (ak && ak !== 'unknown artist' && ak !== 'unknown') {
-        var artist = taste.artists.get(ak) || { name: artistName(track), key: ak, score: 0 };
-        artist.score += weight;
+        var artist = taste.artists.get(ak) || { name: artistName(track), key: ak, score: 0, recentScore: 0, plays: 0 };
+        artist.score += weight * (artistFactor == null ? 1 : artistFactor);
+        artist.recentScore += recentWeight || 0;
         taste.artists.set(ak, artist);
       }
-      tags(track).forEach(function (tag) { taste.styles.set(tag, (taste.styles.get(tag) || 0) + weight); });
+      // Search-query hints help rank candidates, but are not genre metadata and
+      // must not teach the profile that every search result belongs to that genre.
+      classify(track).ids.forEach(function (tag) {
+        taste.styles.set(tag, (taste.styles.get(tag) || 0) + weight * (artistFactor == null ? 1 : artistFactor));
+        taste.recentStyles.set(tag, (taste.recentStyles.get(tag) || 0) + (recentWeight || 0));
+      });
+      return song;
     }
     var sessions = new Map();
     (profile.sessions || []).forEach(function (session) {
+      if (!session || !session.id) { return; }
       var previous = sessions.get(session.id);
       if (!previous || session.listenedSeconds > previous.listenedSeconds) { sessions.set(session.id, session); }
     });
@@ -98,36 +113,66 @@
       taste.heard.add(mk);
       taste.minutes += session.listenedSeconds / 60;
       var age = Math.max(0, (now - (Number(session.updatedAt) || now)) / 86400000);
-      var decay = Math.exp(-age / 45);
+      var decay = Math.exp(-age / 60);
       var full = duration > 0 && Number(session.coverageSeconds) >= duration * 0.8;
       var early = session.skipped && session.listenedSeconds < (duration > 0 ? Math.min(30, duration * 0.2) : 30);
-      var weight = (qualifies(session) ? 1 + Math.min(1.5, session.listenedSeconds / 180) + (full ? 1.5 : 0) : 0.15) * decay;
+      var qualified = qualifies(session);
+      if (qualified) { taste.sessions++; }
+      var weight = (qualified ? 1.6 + Math.min(1.4, session.listenedSeconds / 150) + (full ? 1.6 : 0) : 0) * decay;
       if (early) { weight = -1.8 * decay; }
-      add(track, weight);
-      var record = taste.songs.get(mk);
+      var record = add(track, weight, early ? 0.2 : 1, qualified && !early ? weight * Math.exp(-age / 7) : 0);
+      if (!record) { return; }
       record.last = Math.max(record.last, Number(session.updatedAt) || 0);
-      if (qualifies(session)) { record.plays++; taste.sessions++; }
-      if (early) { record.skips++; }
+      if (qualified) {
+        record.plays++;
+        record.lastPlayed = Math.max(record.lastPlayed, Number(session.updatedAt) || 0);
+        if (age <= 14) { record.recentPlays++; }
+        var artist = taste.artists.get(artistKey(track)); if (artist) { artist.plays++; }
+      }
+      if (early) { record.skips++; if (age <= 14) { record.recentSkips++; } }
     });
-    (library || []).forEach(function (track) { add(track, 4); });
+    var liked = new Set();
+    (library || []).filter(valid).forEach(function (track) {
+      var mk = musicKey(track); if (liked.has(mk)) { return; } liked.add(mk);
+      var record = add(track, 4.5); if (record) { record.liked = true; }
+    });
+    var saved = new Set(), playlistArtists = new Map();
+    (playlists || []).forEach(function (playlist) {
+      (playlist.tracks || []).filter(valid).forEach(function (track) {
+        var mk = musicKey(track), ak = artistKey(track);
+        if (saved.has(mk)) { return; } saved.add(mk);
+        // A large saved Mix must not outweigh actual listening or explicit likes.
+        var count = playlistArtists.get(ak) || 0; playlistArtists.set(ak, count + 1);
+        add(track, 1.2, count < 4 ? 1 : 0);
+      });
+    });
+    taste.songs.forEach(function (song) {
+      if (song.recentPlays >= 2) {
+        var bonus = Math.min(6, (song.recentPlays - 1) * 2.2);
+        song.score += bonus;
+        var artist = taste.artists.get(artistKey(song.track));
+        if (artist) { artist.score += bonus * 0.65; artist.recentScore += bonus * 0.5; }
+      }
+    });
     var selected = preferences(chosenPreferences);
     taste.preferredArtists = new Set(); taste.preferredGenres = new Set(selected.favoriteGenres);
     selected.favoriteArtists.forEach(function (name) {
-      var ak = artistKey({ artist: name }), artist = taste.artists.get(ak) || { name: name, key: ak, score: 0 };
+      var ak = artistKey({ artist: name }), artist = taste.artists.get(ak) || { name: name, key: ak, score: 0, recentScore: 0, plays: 0 };
       artist.score = Math.max(0, artist.score) + 12; artist.preferred = true; artist.name = name;
       taste.artists.set(ak, artist); taste.preferredArtists.add(ak);
     });
     selected.favoriteGenres.forEach(function (genre) { taste.styles.set(genre, Math.max(0, taste.styles.get(genre) || 0) + 10); });
     // Legacy recent history records clicks before playback succeeds. Keep it
     // for the existing History UI, but do not learn preferences from those clicks.
-    (profile.hiddenTracks || []).forEach(function (track) { taste.blocked.add(key(track)); taste.blocked.add(musicKey(track)); });
     taste.artists.forEach(function (artist, ak) { if (artist.score > 0.2) { taste.known.add(ak); } });
-    taste.topArtists = Array.from(taste.artists.values()).filter(function (a) { return a.score > 0; }).sort(function (a, b) { return Number(!!b.preferred) - Number(!!a.preferred) || b.score - a.score; }).slice(0, Math.max(6, selected.favoriteArtists.length));
-    taste.topStyles = styles.map(function (s) { return Object.assign({}, s, { score: taste.styles.get(s.id) || 0, preferred: taste.preferredGenres.has(s.id) }); }).filter(function (s) { return s.score > 0; }).sort(function (a, b) { return Number(b.preferred) - Number(a.preferred) || b.score - a.score; }).slice(0, Math.max(3, selected.favoriteGenres.length));
-    taste.seeds = Array.from(taste.songs.values()).filter(function (s) { return s.score > 0 && !taste.blocked.has(musicKey(s.track)); }).sort(function (a, b) { return b.score - a.score; }).slice(0, 8).map(function (s) { return s.track; });
+    function artistRank(a) { return Math.log1p(Math.max(0, a.score)) * 2 + Math.log1p(Math.max(0, a.recentScore)) + (a.preferred ? 1.2 : 0); }
+    taste.topArtists = Array.from(taste.artists.values()).filter(function (a) { return a.score > 0; }).sort(function (a, b) { return artistRank(b) - artistRank(a); }).slice(0, Math.max(8, selected.favoriteArtists.length));
+    taste.topStyles = styles.map(function (s) { return Object.assign({}, s, { score: taste.styles.get(s.id) || 0, recentScore: taste.recentStyles.get(s.id) || 0, preferred: taste.preferredGenres.has(s.id) }); }).filter(function (s) { return s.score > 0; }).sort(function (a, b) { return Math.log1p(b.score) + Math.log1p(b.recentScore) * 0.5 + Number(b.preferred) - Math.log1p(a.score) - Math.log1p(a.recentScore) * 0.5 - Number(a.preferred); }).slice(0, Math.max(4, selected.favoriteGenres.length));
+    taste.seeds = Array.from(taste.songs.values()).filter(function (s) { return s.score > 0 && !taste.blocked.has(musicKey(s.track)); }).sort(function (a, b) { return b.score - a.score; }).slice(0, 30).map(function (s) { return s.track; });
     return taste;
   }
   function scorePool(pool, taste, similar, now, salt) {
+    similar = similar || {}; now = now || Date.now();
     var unique = new Map(), related = new Map(), relatedSongs = new Map();
     (similar.artists || []).forEach(function (artist) { related.set(artistKey({ artist: artist.name }), artist.seedArtist); });
     (similar.tracks || []).forEach(function (track) { relatedSongs.set(musicKey({ title: track.title, artist: track.artist }), track.seedArtist); });
@@ -136,26 +181,29 @@
       if (!valid(track)) { return; }
       var mk = musicKey(track), ak = artistKey(track), record = taste.songs.get(mk);
       if (taste.blocked.has(key(track)) || taste.blocked.has(mk)) { return; }
-      if (record && record.skips >= 2 && record.score < 0) { return; }
+      if (record && !record.liked && record.recentSkips >= 2 && record.recentSkips > record.recentPlays && record.score <= 0) { return; }
       var affinity = taste.artists.get(ak), styleList = tags(track);
       var style = taste.topStyles.find(function (s) { return styleList.indexOf(s.id) >= 0; });
       var isKnown = taste.known.has(ak), isNew = !taste.heard.has(mk);
       var relatedSeed = related.get(ak) || relatedSongs.get(mk);
       var score = 0.5 + noise(mk) * 0.8;
-      if (affinity && affinity.score > 0) { score += Math.log1p(affinity.score) * 2; }
-      if (affinity && affinity.preferred) { score += 6; }
-      if (style) { score += 2 + Math.log1p(style.score); }
+      if (affinity && affinity.score > 0) { score += Math.log1p(affinity.score) * 2 + Math.log1p(Math.max(0, affinity.recentScore || 0)); }
+      if (affinity && affinity.preferred) { score += 3; }
+      if (style) { score += (classify(track).ids.includes(style.id) ? 2 : 0.7) + Math.log1p(style.score); }
       if (style && style.preferred) { score += 2; }
       if (relatedSeed) { score += 5; }
-      if (record && record.score > 0) { score += Math.log1p(record.score) * 0.6; }
+      if (record && record.score > 0) { score += Math.log1p(record.score) * 1.2; }
+      if (record && record.recentPlays >= 2) { score += Math.min(7, 2.5 + (record.recentPlays - 2) * 1.5); }
+      if (record && record.liked) { score += 1.5; }
       if (isNew) { score += 0.7; }
-      if (record && record.last && now - record.last < 86400000) { score -= 2; }
-      if (record && record.skips) { score -= Math.min(3, record.skips); }
+      if (record && record.lastPlayed && now - record.lastPlayed < 7200000 && record.recentPlays < 2) { score -= 0.8; }
+      if (record && record.recentSkips) { score -= Math.min(5, record.recentSkips * 1.4); }
       var reason = relatedSeed ? 'Liên quan đến ' + relatedSeed : (isKnown ? 'Thêm nhạc của ' + artistName(track) : (style ? 'Khám phá ' + style.name : 'Thử một màu nhạc mới'));
       if (affinity && affinity.preferred) { reason = 'Nghệ sĩ bạn ưa thích: ' + affinity.name; }
       else if (style && style.preferred && !relatedSeed) { reason = 'Theo gu ' + style.name + ' bạn chọn'; }
-      if (record && record.plays >= 2) { reason = 'Bạn thường nghe bài này'; }
-      var entry = { track: Object.assign({}, track, { recommendationReason: reason, recommendationNew: isNew }), score: score, artist: ak, music: mk, discovery: !isKnown && isNew };
+      if (record && record.recentPlays >= 2) { reason = 'Bạn nghe lại ' + record.recentPlays + ' lần gần đây'; }
+      else if (record && record.liked) { reason = 'Bài hát bạn yêu thích'; }
+      var entry = { track: Object.assign({}, track, { recommendationReason: reason, recommendationNew: isNew }), score: score, artist: ak, music: mk, discovery: isNew, newArtist: !isKnown, relatedSeed: relatedSeed || null };
       var old = unique.get(mk);
       if (!old || entry.score > old.score) { unique.set(mk, entry); }
     });
@@ -164,34 +212,133 @@
   function balanced(entries, count, percent, onlyNew) {
     var familiar = entries.filter(function (e) { return !e.discovery; });
     var fresh = entries.filter(function (e) { return e.discovery; });
-    if (onlyNew) { familiar = []; }
+    if (onlyNew) { familiar = []; entries = fresh; }
     var chosen = [], used = new Set(), perArtist = new Map();
-    var target = Math.round(count * percent / 100);
+    var target = Math.round(count * percent / 100), hardCap = Math.max(4, Math.ceil(count / 3));
     function take(list, cap) {
-      var entry = list.find(function (e) { return !used.has(e.music) && (perArtist.get(e.artist) || 0) < cap; });
+      var lastArtist = chosen.length ? artistKey(chosen[chosen.length - 1]) : null;
+      var entry = list.filter(function (e) { return !used.has(e.music) && (perArtist.get(e.artist) || 0) < cap; }).sort(function (a, b) {
+        function rank(e) { return e.score - (perArtist.get(e.artist) || 0) * 1.6 - (e.artist === lastArtist ? 2.5 : 0); }
+        return rank(b) - rank(a);
+      })[0];
       if (!entry) { return false; }
       used.add(entry.music); perArtist.set(entry.artist, (perArtist.get(entry.artist) || 0) + 1); chosen.push(entry.track); return true;
     }
     for (var i = 0; i < count; i++) {
       var explore = onlyNew || Math.floor((i + 1) * target / count) > Math.floor(i * target / count);
       if (!take(explore ? fresh : familiar, 2)) {
-        if (!take(explore ? familiar : fresh, 2) && !take(entries.filter(function (e) { return !onlyNew || e.discovery; }), 4)) { break; }
+        if (!take(explore ? familiar : fresh, 2) && !take(entries, hardCap)) { break; }
       }
+    }
+    return chosen;
+  }
+  function refreshSelection(entries, count, percent, onlyNew, previous) {
+    if (!previous || !previous.length) { return balanced(entries, count, percent, onlyNew); }
+    var shown = new Set(previous.map(musicKey));
+    var eligible = entries.filter(function (entry) { return !onlyNew || entry.discovery; });
+    var chosen = balanced(eligible.filter(function (entry) { return !shown.has(entry.music); }), count, percent, onlyNew);
+    var used = new Set(chosen.map(musicKey)), perArtist = new Map(), cap = Math.max(4, Math.ceil(count / 3));
+    chosen.forEach(function (track) { var artist = artistKey(track); perArtist.set(artist, (perArtist.get(artist) || 0) + 1); });
+    // Keep a full rail when sources have few new matches, without duplicates or
+    // allowing one artist to take over the refreshed recommendations.
+    while (chosen.length < count) {
+      var last = chosen.length ? artistKey(chosen[chosen.length - 1]) : null;
+      var next = eligible.filter(function (entry) { return !used.has(entry.music) && (perArtist.get(entry.artist) || 0) < cap; }).sort(function (a, b) {
+        function rank(entry) { return entry.score - (perArtist.get(entry.artist) || 0) * 1.6 - (entry.artist === last ? 2.5 : 0); }
+        return rank(b) - rank(a);
+      })[0];
+      if (!next) { break; }
+      chosen.push(next.track); used.add(next.music); perArtist.set(next.artist, (perArtist.get(next.artist) || 0) + 1);
     }
     return chosen;
   }
   function makeMixes(entries, taste, percent) {
     var mixes = [];
     var main = balanced(entries, 25, percent, false);
-    if (main.length) { mixes.push({ id: 'personal', name: 'Daily Mix của bạn', description: 'Bài cùng gu xen kẽ những khám phá mới.', tracks: main }); }
+    if (main.length) { mixes.push({ id: 'personal', name: 'Daily Mix của bạn', description: 'Bài quen và nhạc mới, cập nhật theo gu nghe của bạn.', tracks: main }); }
+    var replay = entries.filter(function (entry) { var song = taste.songs.get(entry.music); return song && song.recentPlays >= 2 && song.score > 0; });
+    if (replay.length) { mixes.push({ id: 'repeat', name: 'Nghe nhiều gần đây', description: 'Những bài bạn nghe lại từ hai lần trong 14 ngày qua.', tracks: balanced(replay, 20, 0, false) }); }
     var discovery = balanced(entries, 20, 100, true);
-    if (discovery.length) { mixes.push({ id: 'discovery', name: 'Khám phá hôm nay', description: 'Nhạc và nghệ sĩ bạn chưa nghe trong app.', tracks: discovery }); }
+    if (discovery.length) { mixes.push({ id: 'discovery', name: 'Khám phá hôm nay', description: 'Bài chưa nghe, gồm ca sĩ quen và nghệ sĩ cùng gu.', tracks: discovery }); }
     taste.topStyles.slice(0, 3).forEach(function (style) {
       var selected = entries.filter(function (e) { return tags(e.track).indexOf(style.id) >= 0; });
       var tracks = balanced(selected, 20, percent, false);
       if (tracks.length >= 3) { mixes.push({ id: style.id, name: style.name + ' Mix', description: 'Thêm nhạc theo phong cách bạn thường chọn.', tracks: tracks }); }
     });
     return mixes;
+  }
+
+  function matchScore(value, query) {
+    var input = text(value).replace(/[^\p{L}\p{N}\s]/gu, ' ').replace(/\s+/g, ' ').trim();
+    var q = text(query).replace(/[^\p{L}\p{N}\s]/gu, ' ').replace(/\s+/g, ' ').trim();
+    if (!q) { return 1; }
+    if (input === q) { return 10; }
+    if (input.startsWith(q)) { return 7; }
+    var words = input.split(' '), parts = q.split(' ');
+    if (parts.every(function (part) { return words.some(function (word) { return word.startsWith(part); }); })) { return 5.5; }
+    if (q.length >= 2 && !q.includes(' ') && words.map(function (word) { return word[0] || ''; }).join('').startsWith(q)) { return 4; }
+    if (input.includes(q)) { return 2.5; }
+    return parts.length > 1 && parts.every(function (part) { return input.includes(part); }) ? 1.5 : 0;
+  }
+  function searchAffinity(track, taste) {
+    var song = taste.songs.get(musicKey(track)), artist = taste.artists.get(artistKey(track));
+    var score = artist ? Math.log1p(Math.max(0, artist.score)) * 1.7 + (artist.preferred ? 5 : 0) : 0;
+    var reason = artist && artist.preferred ? 'Nghệ sĩ bạn yêu thích' : artist && artist.plays >= 2 ? 'Nghệ sĩ bạn hay nghe' : '';
+    if (song) {
+      score += Math.log1p(Math.max(0, song.score)) * 2 + Math.min(9, song.recentPlays * 3) - Math.min(8, song.recentSkips * 2);
+      if (song.recentPlays >= 2) { reason = 'Bạn nghe lại ' + song.recentPlays + ' lần gần đây'; }
+      else if (song.liked) { score += 3; reason = 'Bài hát bạn yêu thích'; }
+    }
+    return { score: score, reason: reason };
+  }
+  function rankSearchTracks(tracks, query, taste, includeUnmatched) {
+    var q = text(query), unique = new Map();
+    (tracks || []).forEach(function (track, index) {
+      if (!track || track.id == null || !track.title) { return; }
+      var mk = musicKey(track), match = Math.max(matchScore(track.originalTitle || track.title, q), matchScore(artistName(track), q), matchScore(track.title + ' ' + artistName(track), q));
+      if (q && !match && !includeUnmatched) { return; }
+      if (!q && (taste.blocked.has(key(track)) || taste.blocked.has(mk))) { return; }
+      var affinity = searchAffinity(track, taste);
+      var entry = { track: Object.assign({}, track, { suggestionReason: affinity.reason }), score: match * 10 + Math.min(25, affinity.score) - index * 0.015 };
+      var old = unique.get(mk);
+      if (!old || old.score < entry.score) { unique.set(mk, entry); }
+    });
+    return Array.from(unique.values()).sort(function (a, b) { return b.score - a.score; }).map(function (entry) { return entry.track; });
+  }
+  function rankSearchArtists(values, query, taste) {
+    var q = text(query), unique = new Map();
+    (values || []).forEach(function (value) {
+      if (!value || typeof value.name !== 'string') { return; }
+      var ak = artistKey({ artist: value.name }), match = matchScore(value.name, q), affinity = taste.artists.get(ak);
+      if (!ak || q && !match) { return; }
+      var score = match * 10 + (affinity ? Math.min(24, Math.log1p(Math.max(0, affinity.score)) * 2.5 + Math.log1p(Math.max(0, affinity.recentScore || 0)) * 2 + (affinity.preferred ? 7 : 0)) : 0);
+      var reason = affinity && affinity.preferred ? 'Nghệ sĩ bạn yêu thích' : affinity && affinity.plays >= 2 ? 'Nghệ sĩ bạn hay nghe' : '';
+      var old = unique.get(ak), item = Object.assign({}, value, { suggestionReason: reason });
+      if (!old) { unique.set(ak, { artist: item, score: score }); }
+      else if (old.artist.provider === 'local' && value.provider && value.provider !== 'local' || !old.artist.picture && value.picture) { old.artist = item; }
+    });
+    return Array.from(unique.values()).sort(function (a, b) { return b.score - a.score; }).map(function (entry) { return entry.artist; });
+  }
+  function recommendationQueries(taste, similar, rotation) {
+    rotation = Math.abs(Math.floor(rotation || 0)); similar = similar || {};
+    var requests = [], artists = taste.topArtists, genres = taste.topStyles;
+    if (artists.length) { requests.push({ query: artists[0].name, kind: 'artist' }); }
+    if (artists.length > 1) { requests.push({ query: artists[1 + rotation % Math.min(5, artists.length - 1)].name, kind: 'artist' }); }
+    if (genres.length) { requests.push({ query: genres[0].query, kind: 'style', genre: genres[0].id }); }
+    var related = (similar.artists || []).filter(function (a) { return a.name && !taste.known.has(artistKey({ artist: a.name })); });
+    if (related.length) { requests.push({ query: related[rotation % Math.min(6, related.length)].name, kind: 'new' }); }
+    var songs = (similar.tracks || []).filter(function (track) { var mk = musicKey(track); return track.artist && track.title && !taste.heard.has(mk) && !taste.blocked.has(mk); });
+    if (songs.length) { var song = songs[rotation % Math.min(6, songs.length)]; requests.push({ query: song.artist + ' ' + song.title, kind: 'new' }); }
+    if (genres.length > 1) { var genre = genres[1 + rotation % (genres.length - 1)]; requests.push({ query: genre.query, kind: 'style', genre: genre.id }); }
+    if (requests.length < 3 && artists.length) {
+      // A joint query can surface collaborations and playlists around the user's
+      // artists when no trustworthy genre or similar-artist data is available.
+      requests.push({ query: artists.slice(0, 2).map(function (a) { return a.name; }).join(' ') + ' songs', kind: 'new' });
+    }
+    if (requests.length < 2) { requests.push({ query: genres.length ? genres[0].query + ' new songs' : 'nhac viet pop acoustic', kind: 'new', genre: genres.length ? genres[0].id : null }); }
+    if (!artists.length && !genres.length) { requests.push({ query: 'indie pop chill songs', kind: 'new' }); }
+    var seen = new Set();
+    return requests.filter(function (request) { var q = text(request.query); if (seen.has(q)) { return false; } seen.add(q); return true; }).slice(0, 6);
   }
 
   function Accumulator(track, id, now) {
@@ -225,13 +372,13 @@
     this.ranges = merged.slice(-300);
     this.session.coverageSeconds = Math.min(this.session.listenedSeconds, this.ranges.reduce(function (sum, range) { return sum + range[1] - range[0]; }, 0));
   };
-  var core = { text: text, key: key, artistName: artistName, artistKey: artistKey, musicKey: musicKey, tags: tags, classify: classify, cleanTrack: cleanTrack, preferences: preferences, styles: styles, buildTaste: buildTaste, scorePool: scorePool, balanced: balanced, makeMixes: makeMixes, Accumulator: Accumulator, qualifies: qualifies };
+  var core = { text: text, key: key, artistName: artistName, artistKey: artistKey, musicKey: musicKey, tags: tags, classify: classify, cleanTrack: cleanTrack, preferences: preferences, styles: styles, buildTaste: buildTaste, scorePool: scorePool, balanced: balanced, refreshSelection: refreshSelection, makeMixes: makeMixes, matchScore: matchScore, rankSearchTracks: rankSearchTracks, rankSearchArtists: rankSearchArtists, recommendationQueries: recommendationQueries, Accumulator: Accumulator, qualifies: qualifies };
   if (typeof module !== 'undefined' && module.exports) { module.exports = core; }
   if (!root.document) { return; }
 
   var profile = { epoch: 0, sessions: [], hiddenTracks: [] }, initialized = null, profileReady = false, active = null, activeAudio = null;
   var settings = { percent: 30, lastfm: false, favoriteArtists: [], favoriteGenres: [] }, pending = {}, writeQueue = Promise.resolve(), cache = null, inflight = null, generation = 0;
-  var queryCache = new Map(), lastSave = 0, lastError = 0, timer = null;
+  var queryCache = new Map(), queryPending = new Map(), candidateCache = null, refreshNumber = 0, lastSave = 0, lastError = 0, timer = null, activeSignal = 0;
   function error(message) {
     if (Date.now() - lastError < 20000) { return; }
     lastError = Date.now();
@@ -289,7 +436,12 @@
   function checkpoint() {
     if (active && activeAudio) {
       active.sample(activeAudio, !!root.DangPhatNhac, performance.now());
-      if (active.session.listenedSeconds >= 1) { active.session.updatedAt = Date.now(); lastSave = Date.now(); return queue(active.session); }
+      if (active.session.listenedSeconds >= 1) {
+        active.session.updatedAt = Date.now(); lastSave = Date.now();
+        var signal = qualifies(active.session) ? (active.session.duration > 0 && active.session.coverageSeconds >= active.session.duration * 0.8 ? 2 : 1) : 0;
+        if (signal !== activeSignal) { activeSignal = signal; invalidate(); }
+        return queue(active.session);
+      }
     }
     return writeQueue;
   }
@@ -308,72 +460,91 @@
     activeAudio = audio;
     var id = root.crypto && root.crypto.randomUUID ? root.crypto.randomUUID() : Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
     active = new Accumulator(track, id, Date.now());
+    activeSignal = 0;
     active.sample(audio, true, performance.now()); lastSave = Date.now();
   }
-  function search(query) {
+  function search(query, refresh) {
     var cached = queryCache.get(query);
-    if (cached && Date.now() - cached.at < 1800000) { return cached.promise || Promise.resolve(cached.tracks); }
+    if (!refresh && cached && Date.now() - cached.at < 1800000) { return Promise.resolve(cached.tracks); }
+    if (queryPending.has(query)) { return queryPending.get(query); }
     var request = (root.GiaoDienUngDung.timKiemGoiY || root.GiaoDienUngDung.timKiemTatCa)(query).then(function (tracks) {
       tracks = Array.isArray(tracks) ? tracks.filter(valid) : [];
-      if (tracks.length) { queryCache.set(query, { at: Date.now(), tracks: tracks }); }
+      if (tracks.length) {
+        if (queryCache.size >= 30) { queryCache.delete(queryCache.keys().next().value); }
+        queryCache.set(query, { at: Date.now(), tracks: tracks });
+      }
       else { queryCache.delete(query); }
       return tracks;
-    }).catch(function (message) { queryCache.delete(query); throw message; });
+    }).catch(function (message) { queryCache.delete(query); throw message; }).finally(function () { queryPending.delete(query); });
     // Keep the in-flight query cached even after the UI timeout, so pressing
     // Refresh cannot start duplicate engine processes for the same query.
     var timeout, visible = Promise.race([request, new Promise(function (resolve) { timeout = root.setTimeout(function () { resolve([]); }, 18000); })]).finally(function () { root.clearTimeout(timeout); });
-    if (queryCache.size >= 30) { queryCache.clear(); }
-    queryCache.set(query, { at: Date.now(), promise: visible });
+    queryPending.set(query, visible);
     return visible;
+  }
+  function currentTaste(library) {
+    var snapshot = profile;
+    if (active && active.session.listenedSeconds >= 1) {
+      snapshot = Object.assign({}, profile, { sessions: profile.sessions.filter(function (session) { return session.id !== active.session.id; }).concat([active.session]) });
+    }
+    return buildTaste(snapshot, library || [], [], Date.now(), settings, root.DanhSachPhatNguoiDung || []);
+  }
+  function retrievalSignature(taste) {
+    return JSON.stringify([profile.epoch, settings.lastfm, taste.topArtists.slice(0, 6).map(function (artist) { return artist.key; }), taste.topStyles.map(function (style) { return style.id; })]);
+  }
+  function composeRecommendations(pool, taste, similar, salt, successes, previous) {
+    var entries = scorePool(pool.concat(taste.seeds), taste, similar, Date.now(), salt);
+    var artists = [], names = new Set();
+    entries.filter(function (entry) { return entry.discovery && entry.artist && entry.newArtist; }).forEach(function (entry) {
+      if (!names.has(entry.artist) && artists.length < 8) { names.add(entry.artist); artists.push({ name: artistName(entry.track), track: entry.track, reason: entry.track.recommendationReason }); }
+    });
+    var mixes = makeMixes(entries, taste, settings.percent);
+    if (previous && previous.length) {
+      mixes.forEach(function (mix) {
+        if (mix.id === 'personal') { mix.tracks = refreshSelection(entries, 25, settings.percent, false, previous); }
+        if (mix.id === 'discovery') { mix.tracks = refreshSelection(entries, 20, 100, true, previous); }
+      });
+    }
+    return { forYou: refreshSelection(entries, 18, settings.percent, false, previous), discovery: refreshSelection(entries, 18, 100, true, previous), artists: artists, mixes: mixes, taste: taste, warning: similar.warning || null, offline: !successes, personalized: taste.seeds.length > 0 || taste.preferredArtists.size > 0 || taste.preferredGenres.size > 0 };
   }
   async function getRecommendations(library, recent, force) {
     await initialize();
-    if (!force && cache && Date.now() - cache.at < 1800000) { return cache.value; }
-    if (!force && inflight) { return inflight; }
+    if (inflight) { return inflight; }
+    var taste = currentTaste(library), signature = retrievalSignature(taste);
+    if (!force && cache && cache.signature === signature && Date.now() - cache.at < 1800000) { return cache.value; }
+    if (!force && candidateCache && candidateCache.signature === signature && Date.now() - candidateCache.at < 1800000) {
+      var refreshed = composeRecommendations(candidateCache.pool.concat(library || []), taste, candidateCache.similar, candidateCache.salt, candidateCache.successes, candidateCache.previous);
+      cache = { at: Date.now(), signature: signature, value: refreshed }; return refreshed;
+    }
     var run = ++generation;
+    var oldValue = cache && cache.value;
+    var previous = force ? [].concat(oldValue ? oldValue.forYou : root.DanhSachChoBan || [], oldValue ? oldValue.discovery : root.DanhSachKhamPha || []) : [];
     inflight = (async function () {
-      var taste = buildTaste(profile, library, recent, Date.now(), settings);
-      var similar = { artists: [], tracks: [] }, requests = [];
-      var artistsToSearch = taste.topArtists.filter(function (artist) { return artist.preferred; });
-      var genresToSearch = taste.topStyles.filter(function (genre) { return genre.preferred; });
-      if (!artistsToSearch.length) { artistsToSearch = taste.topArtists.slice(); }
-      if (!genresToSearch.length) { genresToSearch = taste.topStyles.slice(); }
-      if (force && artistsToSearch.length > 2) { var artistOffset = Math.floor(Math.random() * artistsToSearch.length); artistsToSearch = artistsToSearch.slice(artistOffset).concat(artistsToSearch.slice(0, artistOffset)); }
-      if (force && genresToSearch.length > 2) { var genreOffset = Math.floor(Math.random() * genresToSearch.length); genresToSearch = genresToSearch.slice(genreOffset).concat(genresToSearch.slice(0, genreOffset)); }
-      if (artistsToSearch.length < 2 && taste.preferredArtists.size) { artistsToSearch = artistsToSearch.concat(taste.topArtists.filter(function (artist) { return !artist.preferred; })); }
-      if (genresToSearch.length < 2 && taste.preferredGenres.size) { genresToSearch = genresToSearch.concat(taste.topStyles.filter(function (genre) { return !genre.preferred; })); }
-      if (settings.lastfm && artistsToSearch.length) {
-        try { similar = await root.GiaoDienUngDung.layNhacTuongTu(artistsToSearch.slice(0, 2).map(function (a) { return a.name; }), taste.seeds.slice(0, 2)); }
+      var similar = { artists: [], tracks: [] };
+      if (settings.lastfm && taste.topArtists.length) {
+        try { similar = await root.GiaoDienUngDung.layNhacTuongTu(taste.topArtists.slice(0, 2).map(function (a) { return a.name; }), taste.seeds.slice(0, 2)); }
         catch (_) { similar.warning = 'Chưa lấy được nhạc tương tự. Gợi ý theo hồ sơ nghe vẫn hoạt động.'; }
       }
-      artistsToSearch.slice(0, 2).forEach(function (artist) { requests.push({ query: artist.name, kind: 'artist' }); });
-      genresToSearch.slice(0, 2).forEach(function (style) { requests.push({ query: style.query, kind: 'style', genre: style.id }); });
-      if (similar.artists && similar.artists.length) {
-        var index = force ? Math.floor(Math.random() * Math.min(6, similar.artists.length)) : 0;
-        requests.push({ query: similar.artists[index].name, kind: 'new' });
-      }
-      if (similar.tracks && similar.tracks.length) { requests.push({ query: similar.tracks[0].artist + ' ' + similar.tracks[0].title, kind: 'new' }); }
-      if (requests.length < 3) { requests.push({ query: taste.topStyles.length ? taste.topStyles[0].query + ' new songs' : 'nhac viet pop acoustic remix', kind: 'new', genre: taste.topStyles.length ? taste.topStyles[0].id : null }); }
-      if (!requests.length || !taste.topArtists.length && !taste.topStyles.length) { requests.push({ query: 'indie pop chill songs', kind: 'new' }); }
-      var seen = new Set();
-      requests = requests.filter(function (r) { if (seen.has(r.query)) { return false; } seen.add(r.query); return true; }).slice(0, 5);
+      similar = similar || { artists: [], tracks: [] };
+      var rotation = Math.floor(Date.now() / 86400000) + (force ? ++refreshNumber : refreshNumber);
+      var requests = recommendationQueries(taste, similar, rotation);
       var pool = (library || []).slice().concat(taste.seeds), successes = 0;
       for (var offset = 0; offset < requests.length; offset += 2) {
-        var results = await Promise.allSettled(requests.slice(offset, offset + 2).map(function (r) { return search(r.query); }));
+        var results = await Promise.allSettled(requests.slice(offset, offset + 2).map(function (r) { return search(r.query, force); }));
         results.forEach(function (result, index) { if (result.status === 'fulfilled' && result.value.length) {
           successes++; var genre = requests[offset + index].genre;
           pool = pool.concat(result.value.map(function (track) { return genre ? Object.assign({}, track, { recommendationGenreHints: [genre] }) : track; }));
         } });
       }
-      var salt = force ? Math.floor(Math.random() * 1000000) : Math.floor(Date.now() / 86400000);
-      var entries = scorePool(pool, taste, similar || {}, Date.now(), salt);
-      var forYou = balanced(entries, 18, settings.percent, false), discovery = balanced(entries, 18, 100, true);
-      var artists = [], names = new Set();
-      entries.filter(function (entry) { return entry.discovery && entry.artist && !taste.known.has(entry.artist); }).forEach(function (entry) {
-        if (!names.has(entry.artist) && artists.length < 8) { names.add(entry.artist); artists.push({ name: artistName(entry.track), track: entry.track, reason: entry.track.recommendationReason }); }
-      });
-      var value = { forYou: forYou, discovery: discovery, artists: artists, mixes: makeMixes(entries, taste, settings.percent), taste: taste, warning: similar.warning || null, offline: !successes, personalized: taste.seeds.length > 0 || taste.preferredArtists.size > 0 || taste.preferredGenres.size > 0 };
-      if (run === generation) { cache = { at: Date.now(), value: value }; inflight = null; }
+      var salt = rotation, latestTaste = currentTaste(root.DanhSachBaiHatThuVien || library);
+      // Feedback can arrive while slow music sources are loading. Always rank
+      // against the latest profile, including the current qualified session.
+      var value = composeRecommendations(pool, latestTaste, similar, salt, successes, previous);
+      if (run === generation) {
+        candidateCache = { at: Date.now(), signature: signature, pool: pool, similar: similar, salt: salt, successes: successes, previous: previous };
+        cache = { at: Date.now(), signature: signature, value: value };
+        if (retrievalSignature(latestTaste) !== signature) { root.setTimeout(invalidate, 0); }
+      }
       return value;
     })();
     try { return await inflight; } finally { if (run === generation) { inflight = null; } }
@@ -381,7 +552,7 @@
   async function hide(track) {
     await initialize();
     await root.GiaoDienUngDung.anBaiGoiY(profile.epoch, cleanTrack(track));
-    profile.hiddenTracks.push(cleanTrack(track)); cache = null; generation++;
+    profile.hiddenTracks.push(cleanTrack(track)); invalidate();
   }
   async function clear() {
     await initialize();
@@ -389,11 +560,14 @@
     await finish('reset'); await writeQueue;
     try { profile = await root.GiaoDienUngDung.xoaHoSoNghe(); }
     catch (message) { if (track && audio && !audio.paused && root.DangPhatNhac) { start(track, audio); } throw message; }
-    pending = {}; savePending(); cache = null; inflight = null; generation++; queryCache.clear();
+    pending = {}; savePending(); cache = null; candidateCache = null; inflight = null; generation++; queryCache.clear();
     if (track && audio && !audio.paused && root.DangPhatNhac) { start(track, audio); }
     return profile;
   }
-  function invalidate() { cache = null; generation++; inflight = null; }
+  function invalidate() {
+    cache = null;
+    root.dispatchEvent(new CustomEvent('ngquang-taste-changed'));
+  }
   function bindAudio(audio) {
     ['seeking', 'seeked', 'playing', 'waiting', 'stalled', 'pause'].forEach(function (event) {
       audio.addEventListener(event, function () { if (audio === activeAudio && active) { active.resetClock(); } });
@@ -412,9 +586,9 @@
     tiepTucPhien: function (track, audio) { if (!active || key(active.session.track) !== key(track)) { start(track, audio); } else { active.resetClock(); } },
     quanSat: function (audio) { if (active && audio === activeAudio) { active.sample(audio, !!root.DangPhatNhac, performance.now()); } },
     layGoiY: getRecommendations, anBai: hide, xoaHoSo: clear, lamMoi: invalidate,
-    capNhatCaiDat: function (percent, lastfm) { settings.percent = percent; settings.lastfm = !!lastfm; invalidate(); },
+    capNhatCaiDat: function (percent, lastfm) { settings.percent = Math.max(0, Math.min(60, Number(percent) || 0)); settings.lastfm = !!lastfm; candidateCache = null; invalidate(); },
     capNhatSoThich: function (artists, genres) { Object.assign(settings, preferences({ favoriteArtists: artists, favoriteGenres: genres })); invalidate(); },
-    thongKe: function (library) { return buildTaste(profile, library || [], [], Date.now(), settings); },
+    thongKe: currentTaste,
     layHoSo: function () { return profile; },
     truocKhiDong: function () { return finish('close'); }
   };

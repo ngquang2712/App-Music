@@ -20,7 +20,9 @@
       "../GiaoDien/GiaoDienMoi.js",
       "../GiaoDien/GiaoDienMoi.css",
       "../GiaoDien/TuyChinhUngDung.js",
-      "../GiaoDien/TuyChinhUngDung.css"
+      "../GiaoDien/TuyChinhUngDung.css",
+      "../GiaoDien/NhacCaNhan.js",
+      "../GiaoDien/NhacCaNhan.css"
     ]
   },
   "app": {

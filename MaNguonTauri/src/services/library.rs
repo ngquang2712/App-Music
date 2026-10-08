@@ -656,6 +656,34 @@ impl LibraryService {
         Ok(playlist)
     }
 
+    // Change existing copies only; editing a personal song must not add a like.
+    pub fn update_personal_references(&self, id: &str, updated: Option<&Track>) -> Result<(), String> {
+        fn change(tracks: &mut Vec<Track>, id: &str, updated: Option<&Track>) {
+            if let Some(track) = updated {
+                for item in tracks.iter_mut().filter(|t| t.id == id && t.source == "local") { *item = track.clone(); }
+            } else { tracks.retain(|t| !(t.id == id && t.source == "local")); }
+        }
+        let mut liked = self.tracks_cache.write().map_err(|_| "Thư viện đang bận.")?;
+        let mut next = liked.clone(); change(&mut next, id, updated);
+        Self::write_json(&self.library_file, &LibraryData { tracks: next.clone() })?; *liked = next;
+        let mut playlists = self.playlists_cache.write().map_err(|_| "Playlist đang bận.")?;
+        let mut next = playlists.clone();
+        for playlist in &mut next { change(&mut playlist.tracks, id, updated); }
+        Self::write_json(&self.playlists_file, &PlaylistsData { playlists: next.clone() })?; *playlists = next;
+        let mut playback = self.playback_cache.write().map_err(|_| "Trình phát đang bận.")?;
+        let mut next = playback.clone();
+        let current = next.current_track.clone();
+        change(&mut next.queue, id, updated);
+        if current.as_ref().is_some_and(|t| t.id == id && t.source == "local") {
+            next.current_track = updated.cloned();
+            if updated.is_none() { next.current_time = 0.0; next.is_playing = false; }
+        }
+        next.queue_index = next.current_track.as_ref().and_then(|t| next.queue.iter().position(|q| q.id == t.id && q.source == t.source)).map(|n| n as i32).unwrap_or(-1);
+        if updated.is_none() { next.ab_segments.remove(&format!("local:{id}")); }
+        Self::write_json(&self.playback_file, &next)?; *playback = next;
+        Ok(())
+    }
+
     fn write_json<T: serde::Serialize>(path: &Path, value: &T) -> Result<(), String> {
         let parent = path.parent().ok_or("Đường dẫn dữ liệu không hợp lệ.")?;
         fs::create_dir_all(parent).map_err(|e| format!("Không tạo được thư mục dữ liệu: {e}"))?;

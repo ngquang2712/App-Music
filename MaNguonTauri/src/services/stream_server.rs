@@ -3,6 +3,7 @@ use reqwest::Client;
 use std::collections::HashMap;
 use crate::models::StreamResult;
 use crate::services::offline::OfflineCache;
+use crate::services::personal::PersonalMusicService;
 use std::path::Path;
 use std::sync::{Arc, Mutex, RwLock, Weak};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
@@ -14,13 +15,14 @@ pub struct StreamServer {
     port: u16,
     client: Client,
     pub offline: Arc<OfflineCache>,
+    personal: Arc<PersonalMusicService>,
     prepared: RwLock<HashMap<String, (Instant, StreamResult)>>,
     preparation_locks: Mutex<HashMap<String, Weak<tokio::sync::Mutex<()>>>>,
 }
 
 #[allow(dead_code)]
 impl StreamServer {
-    pub async fn start<P: AsRef<Path>>(root_dir: P) -> Result<Arc<Self>, String> {
+    pub async fn start<P: AsRef<Path>>(root_dir: P, personal: Arc<PersonalMusicService>) -> Result<Arc<Self>, String> {
         let listener = TcpListener::bind("127.0.0.1:0")
             .await
             .map_err(|e| format!("Failed to bind stream server: {}", e))?;
@@ -43,6 +45,7 @@ impl StreamServer {
             port,
             client,
             offline: OfflineCache::new(cache_dir),
+            personal,
             prepared: RwLock::new(HashMap::new()),
             preparation_locks: Mutex::new(HashMap::new()),
         });
@@ -216,6 +219,14 @@ impl StreamServer {
             .map(|s| s.as_str())
             .unwrap_or("audio/webm");
 
+        if source == "local" {
+            if let Ok((file, entry)) = self.personal.file(track_id) {
+                let len = tokio::fs::metadata(&file).await?.len();
+                return self.serve_local_file(socket, &file, len, &entry.content_type, range_header.as_deref(), method == "HEAD").await;
+            }
+            socket.write_all(b"HTTP/1.1 404 Personal File Missing\r\nAccess-Control-Allow-Origin: *\r\nContent-Length: 0\r\n\r\n").await?;
+            return Ok(());
+        }
         if let Some((cache_file, cached_type)) = self.offline.cached_file(source, track_id) {
             let file_len = tokio::fs::metadata(&cache_file).await?.len();
             return self.serve_local_file(socket, &cache_file, file_len, &cached_type, range_header.as_deref(), method == "HEAD").await;
@@ -387,15 +398,47 @@ fn upstream_headers(values: &HashMap<String, String>) -> HeaderMap {
 
 #[cfg(test)]
 mod tests {
-    use super::StreamServer;
+    use super::{StreamServer, PersonalMusicService, Arc};
     use std::collections::HashMap;
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
     use tokio::net::TcpListener;
 
     #[tokio::test]
+    async fn personal_audio_supports_ranges_head_and_survives_cache_clearing() {
+        use crate::services::personal::PersonalMetadata;
+        let stamp = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos();
+        let root = std::env::temp_dir().join(format!("personal-stream-test-{stamp}"));
+        let personal = Arc::new(PersonalMusicService::new(&root).unwrap());
+        let audio = b"ID3fixture data for range requests";
+        let id = personal.begin("demo.mp3".into(), audio.len() as u64).unwrap();
+        personal.append(&id, 0, audio).unwrap();
+        let track = personal.commit(&id, PersonalMetadata { title: "Demo".into(), artist: "Me".into(), cover: String::new(), duration: 80.0 }).unwrap().entry.track;
+        let server = StreamServer::start(&root, personal.clone()).await.unwrap();
+        let url = server.get_cached_stream_url(&track.id, "local", "audio/mpeg");
+        let client = reqwest::Client::new();
+        let range = client.get(&url).header("Range", "bytes=3-9").send().await.unwrap();
+        assert_eq!(range.status().as_u16(), 206);
+        assert_eq!(range.headers()["content-type"], "audio/mpeg");
+        assert_eq!(range.headers()["content-range"], format!("bytes 3-9/{}", audio.len()));
+        assert_eq!(&range.bytes().await.unwrap()[..], &audio[3..10]);
+        let head = client.head(&url).send().await.unwrap();
+        assert_eq!(head.status().as_u16(), 200);
+        assert_eq!(head.headers()["content-length"], audio.len().to_string());
+        assert!(head.bytes().await.unwrap().is_empty());
+        assert_eq!(client.get(&url).header("Range", "bytes=999-").send().await.unwrap().status().as_u16(), 416);
+        server.offline.clear().unwrap();
+        assert_eq!(&client.get(&url).send().await.unwrap().bytes().await.unwrap()[..], audio);
+        personal.remove(&track.id).unwrap();
+        assert_eq!(client.get(&url).send().await.unwrap().status().as_u16(), 404);
+        let bad = server.get_cached_stream_url("../../file", "local", "audio/mpeg");
+        assert_eq!(client.get(&bad).send().await.unwrap().status().as_u16(), 404);
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[tokio::test]
     async fn forwards_headers_range_and_preserves_upstream_status() {
         let root = std::env::temp_dir().join(format!("omni-proxy-test-{}", std::process::id()));
-        let proxy = StreamServer::start(&root).await.unwrap();
+        let proxy = StreamServer::start(&root, Arc::new(PersonalMusicService::new(&root).unwrap())).await.unwrap();
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let port = listener.local_addr().unwrap().port();
         let upstream = tokio::spawn(async move {

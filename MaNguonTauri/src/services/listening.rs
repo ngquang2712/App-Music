@@ -78,7 +78,7 @@ impl ListeningService {
     }
 
     fn clean_track(mut track: Track) -> Result<Track, String> {
-        if track.id.is_empty() || track.id.len() > 512 || !["youtube", "spotify", "soundcloud"].contains(&track.source.as_str()) {
+        if track.id.is_empty() || track.id.len() > 512 || !["youtube", "spotify", "soundcloud", "local"].contains(&track.source.as_str()) {
             return Err("Bài hát không hợp lệ.".into());
         }
         fn trim(value: &str, limit: usize) -> String { value.chars().take(limit).collect() }

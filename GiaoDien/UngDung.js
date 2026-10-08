@@ -584,7 +584,7 @@ function DongBoTrangThaiYeuThich() {
   });
 }
 
-function ChuyenDoiGiaoDien(TenGiaoDienMucTieu, MaDanhSachPhat) {
+function ChuyenDoiGiaoDien(TenGiaoDienMucTieu, MaDanhSachPhat, BoQuaTaiTrangChu) {
   document.body.classList.toggle('in-track-page', TenGiaoDienMucTieu === 'track-detail');
   DongMenuTrangChiTiet();
   var CacNutMenu = document.querySelectorAll('.nav-item[data-view]');
@@ -628,12 +628,13 @@ function ChuyenDoiGiaoDien(TenGiaoDienMucTieu, MaDanhSachPhat) {
     CapNhatGiaoDienThuVien();
   } else if (TenGiaoDienMucTieu === 'playlist' && MaDanhSachPhat) {
     VeGiaoDienDanhSachPhat(MaDanhSachPhat);
-  } else if (TenGiaoDienMucTieu === 'home') {
+  } else if (TenGiaoDienMucTieu === 'home' && !BoQuaTaiTrangChu) {
     VeToanBoTrangChu();
   }
   if (window.GiaoDienMoi) { GiaoDienMoi.doiGiaoDien(TenGiaoDienMucTieu); }
   if (window.KhamPhaNhac) { KhamPhaNhac.doiGiaoDien(TenGiaoDienMucTieu); }
   if (window.NhacOfflineVaTocDo) { NhacOfflineVaTocDo.doiGiaoDien(TenGiaoDienMucTieu); }
+  if (window.NhacCaNhan) { NhacCaNhan.doiGiaoDien(TenGiaoDienMucTieu); }
 }
 
 function MoTrangChiTietBaiHat(BaiHat, BoBoiCanh, ViTri) {
@@ -747,7 +748,7 @@ function CapNhatGiaoDienTrangChiTiet(BaiHat) {
     NgheSi.title = NgheSi.textContent;
   }
   if (HuyHieu) {
-    HuyHieu.textContent = BaiHat.source ? BaiHat.source.toUpperCase() : 'OMNI';
+    HuyHieu.textContent = BaiHat.source === 'local' ? 'Nhạc cá nhân' : (BaiHat.source ? BaiHat.source.toUpperCase() : 'OMNI');
     HuyHieu.className = 'track-page-source-badge ' + BaiHat.source;
   }
   var NutYeuThich = document.getElementById('track-page-btn-fav');
@@ -1251,17 +1252,19 @@ function CapNhatTienDoTiepTucNghe(BaiHat, ThoiGianHienTai, TongThoiGian) {
 }
 
 var DanhSachThinhHanh = [];
+var LoiHuaThinhHanh = null;
 var DanhSachChoBan = [];
 var DanhSachKhamPha = [];
 
 function TaiDanhSachThinhHanh(BatBuocTaiLai) {
   var KhungChua = document.getElementById('home-hot-grid');
+  if (LoiHuaThinhHanh) { return LoiHuaThinhHanh; }
   if (!BatBuocTaiLai && DanhSachThinhHanh && DanhSachThinhHanh.length > 0) {
     VeTheBaiHatTrangChu(DanhSachThinhHanh, KhungChua, { isContinue: false });
     return Promise.resolve(DanhSachThinhHanh);
   }
   VeTheGiaLap(KhungChua, 6);
-  return GiaoDienUngDung.timKiemTatCa('nhac tre remix thinh hanh tiktok').then(function(KetQua) {
+  LoiHuaThinhHanh = GiaoDienUngDung.timKiemTatCa('nhac tre remix thinh hanh tiktok').then(function(KetQua) {
     if (Array.isArray(KetQua)) {
       DanhSachThinhHanh = KetQua.slice(0, 15);
     } else {
@@ -1273,13 +1276,16 @@ function TaiDanhSachThinhHanh(BatBuocTaiLai) {
     if (KhungChua) {
       KhungChua.innerHTML = '<div class="empty-placeholder"><p>Chưa tải được danh sách</p></div>';
     }
-  });
+  }).finally(function() { LoiHuaThinhHanh = null; });
+  return LoiHuaThinhHanh;
 }
 
 var LuotVeGoiY = 0;
 var TyLeKhamPhaDaLuu = 30;
 var GoiYHienTai = null;
 var LoiHuaGoiYHienTai = null;
+var LoiHuaLamMoiTrangChu = null;
+var BoHenGioCapNhatGu = null;
 var SoThichNhacDaLuu = { favoriteArtists: [], favoriteGenres: [] };
 var SoThichNhacDangChon = { favoriteArtists: [], favoriteGenres: [] };
 var DangLuuSoThichNhac = false;
@@ -1429,7 +1435,7 @@ function TaiGoiYCaNhan(BatBuocTaiLai) {
     if (!DanhSachChoBan.length) { ForYou.innerHTML = '<p class="recommendation-empty">Chưa có gợi ý. Thêm vài bài Yêu thích hoặc thử lại khi có kết nối mạng.</p>'; }
     if (!DanhSachKhamPha.length) { Discovery.innerHTML = '<p class="recommendation-empty">Chưa tìm được thêm nhạc mới phù hợp. Bạn vẫn có thể nghe Mix từ các bài đã có.</p>'; }
     document.getElementById('foryou-subtitle').textContent = KetQua.personalized ? 'Bài cùng gu xen kẽ nhạc mới • Cập nhật theo cách bạn nghe và yêu thích' : 'Bắt đầu khám phá, rồi app sẽ học từ những bài bạn nghe và yêu thích.';
-    document.getElementById('discovery-subtitle').textContent = KetQua.offline ? 'Chưa tải được nhạc mới. Đang dùng những bài có sẵn để gợi ý.' : 'Nhạc và nghệ sĩ mới đối với lịch sử nghe trong app của bạn.';
+    document.getElementById('discovery-subtitle').textContent = KetQua.offline ? 'Chưa tải được nhạc mới. Đang dùng những bài có sẵn để gợi ý.' : 'Bài bạn chưa nghe trong app, từ ca sĩ quen và nghệ sĩ cùng gu.';
     VeMixGoiY(KetQua.mixes); VeNgheSiGoiY(KetQua.artists); CapNhatThongKeGuNhac();
     if (KetQua.warning) { document.getElementById('lastfm-key-status').textContent = KetQua.warning; }
     return KetQua;
@@ -1449,13 +1455,36 @@ function TaiGoiYCaNhan(BatBuocTaiLai) {
 function TaiDanhSachChoBan(BatBuocTaiLai) { return TaiGoiYCaNhan(BatBuocTaiLai); }
 function TaiDanhSachKhamPha(BatBuocTaiLai) { return TaiGoiYCaNhan(BatBuocTaiLai); }
 
-function VeToanBoTrangChu() {
+function VeToanBoTrangChu(BatBuocTaiLai) {
+  if (LoiHuaLamMoiTrangChu && !BatBuocTaiLai) { return LoiHuaLamMoiTrangChu; }
   if (window.GiaoDienMoi) { GiaoDienMoi.capNhatTrangChu(); }
   VePhanTiepTucNghe();
   VePhanLichSuNghe();
-  TaiDanhSachThinhHanh(false);
-  TaiDanhSachChoBan(false);
-  TaiDanhSachKhamPha(false);
+  return Promise.allSettled([TaiDanhSachThinhHanh(!!BatBuocTaiLai), TaiGoiYCaNhan(!!BatBuocTaiLai)]);
+}
+
+function LamMoiTrangChu() {
+  if (LoiHuaLamMoiTrangChu) { return LoiHuaLamMoiTrangChu; }
+  clearTimeout(BoHenGioCapNhatGu);
+  ChuyenDoiGiaoDien('home', null, true);
+  if (window.KhamPhaNhac) { KhamPhaNhac.xoaTimKiem(); }
+  var Khung = document.getElementById('view-home');
+  if (Khung) { Khung.scrollTop = 0; }
+  var CacNutHome = document.querySelectorAll('#btn-header-home, .nav-item[data-view="home"], [data-jump-view="home"]');
+  CacNutHome.forEach(function(Nut) { Nut.disabled = true; Nut.setAttribute('aria-busy', 'true'); });
+  // Finish an existing load before requesting a new set. Repeated Home clicks
+  // share this operation and never restart playback or the recommendation engines.
+  LoiHuaLamMoiTrangChu = Promise.allSettled([LoiHuaGoiYHienTai, LoiHuaThinhHanh]).then(function() {
+    return VeToanBoTrangChu(true);
+  }).then(function(KetQua) {
+    if (window.GiaoDienMoi) { GiaoDienMoi.capNhatTrangChu(true); }
+    document.querySelectorAll('#view-home .home-carousel-track').forEach(function(Day) { Day.scrollLeft = 0; });
+    return KetQua;
+  }).finally(function() {
+    LoiHuaLamMoiTrangChu = null;
+    CacNutHome.forEach(function(Nut) { Nut.disabled = false; Nut.removeAttribute('aria-busy'); });
+  });
+  return LoiHuaLamMoiTrangChu;
 }
 
 function DocDanhSachPhatNguoiDung() {
@@ -1465,6 +1494,7 @@ function DocDanhSachPhatNguoiDung() {
     } else {
       DanhSachPhatNguoiDung = [];
     }
+    if (window.GoiYAmNhac) { GoiYAmNhac.lamMoi(); }
     VeDanhSachPhatThanhBen();
     if (GiaoDienHienTai === 'playlist' && MaDanhSachPhatHienTai) {
       VeGiaoDienDanhSachPhat(MaDanhSachPhatHienTai);
@@ -1975,6 +2005,7 @@ function PhatBaiHat(DuLieuBaiHatTho, BoBoiCanh, ViTriTrongDanhSach, BuocTiepTuc,
     return;
   }
   if (window.KhamPhaNhac && KhamPhaNhac.laBaiNgoai(DuLieuBaiHatTho)) { KhamPhaNhac.moBaiNgoai(DuLieuBaiHatTho); return; }
+  if (window.NhacOfflineVaTocDo) { NhacOfflineVaTocDo.huyTangTocTamThoi(); }
   if (window.KhamPhaNhac && Array.isArray(BoBoiCanh)) { BoBoiCanh = BoBoiCanh.filter(function(Bai) { return !KhamPhaNhac.laBaiNgoai(Bai); }); ViTriTrongDanhSach = Math.max(0, BoBoiCanh.indexOf(DuLieuBaiHatTho)); }
   if (window.GoiYAmNhac) { GoiYAmNhac.ketThucPhien(LyDoChuyenBai || 'switch'); }
   var AudioDaChuanBi = window.ChuanBiBaiTiep ? ChuanBiBaiTiep.nhanBai(DuLieuBaiHatTho) : null;
@@ -2602,8 +2633,8 @@ function MoCuaSoChinhSuaBaiHat(BaiHat) {
 
   if (OTieuDe) { OTieuDe.value = BaiHat.title; }
   if (ONgheSi) { ONgheSi.value = BaiHat.artist; }
-  if (OUrlAnh) { if (BaiHat.cover && BaiHat.cover.indexOf('http') === 0) { OUrlAnh.value = BaiHat.cover; } else { OUrlAnh.value = ''; } }
-  if (NguonText) { NguonText.textContent = BaiHat.source.toUpperCase(); }
+  if (OUrlAnh) { OUrlAnh.disabled = BaiHat.source === 'local'; OUrlAnh.placeholder = BaiHat.source === 'local' ? 'Chọn ảnh từ máy bằng nút Chọn ảnh' : 'https://…'; if (BaiHat.cover && BaiHat.cover.indexOf('http') === 0) { OUrlAnh.value = BaiHat.cover; } else { OUrlAnh.value = ''; } }
+  if (NguonText) { NguonText.textContent = BaiHat.source === 'local' ? 'Nhạc cá nhân' : BaiHat.source.toUpperCase(); }
   if (ThoiLuongText) { ThoiLuongText.textContent = DinhDangThoiLuongBaiHat(BaiHat); }
 
   var DuongDanAnh = GiaiQuyetDuongDanAnhBia(BaiHat, 300);
@@ -2833,6 +2864,41 @@ function KhoiPhucPhienLamViec() {
   });
 }
 
+function CapNhatThamChieuNhacCaNhan(Bai) {
+  var CacDanhSach = [DanhSachCho, DanhSachBaiHatThuVien, LichSuNgheTrangChu, TiepTucNgheTrangChu, KetQuaTimKiem, DanhSachChoBan, DanhSachKhamPha];
+  DanhSachPhatNguoiDung.forEach(function(P) { CacDanhSach.push(P.tracks || []); });
+  CacDanhSach.forEach(function(DS) { (DS || []).forEach(function(T) { if (T.id === Bai.id && T.source === 'local') { Object.assign(T, Bai); delete T.customCoverBase64; } }); });
+  try { localStorage.setItem('omni_home_continue', JSON.stringify(TiepTucNgheTrangChu)); localStorage.setItem('omni_home_history', JSON.stringify(LichSuNgheTrangChu)); } catch (Loi) {}
+  VeDanhSachCho(); LuuTrangThaiPhatNhac();
+}
+
+function ChuanBiXoaNhacCaNhan(Bai) {
+  var LaBaiDangPhat = BaiHatDangPhat && BaiHatDangPhat.source === 'local' && BaiHatDangPhat.id === Bai.id;
+  if (window.ChuanBiBaiTiep) { ChuanBiBaiTiep.huy(false); }
+  HuyBoChuyenNhac(false);
+  if (!LaBaiDangPhat) { if (TrinhPhatAmThanhChinh) { TrinhPhatAmThanhChinh.volume = MucAmLuong; } return; }
+  if (window.GoiYAmNhac) { GoiYAmNhac.ketThucPhien('delete'); }
+  if (window.NhacOfflineVaTocDo) { NhacOfflineVaTocDo.huyTangTocTamThoi(); }
+  MaYeuCauPhatHienTai += 1; DangTaiBaiHat = false; DangPhatNhac = false;
+  [TrinhPhatAmThanhChinh, TrinhPhatAmThanhPhu].forEach(function(Audio) { if (Audio) { Audio.pause(); Audio.removeAttribute('src'); Audio.load(); } });
+  BaiHatDangPhat = null; ViTriDangPhat = -1;
+  CapNhatThanhPhatNhacDuoiCung(null); CapNhatHieuUngSong();
+}
+
+function XoaThamChieuNhacCaNhan(Bai) {
+  function Giu(T) { return !(T.source === 'local' && T.id === Bai.id); }
+  DanhSachCho = DanhSachCho.filter(Giu); DanhSachBaiHatThuVien = DanhSachBaiHatThuVien.filter(Giu);
+  LichSuNgheTrangChu = LichSuNgheTrangChu.filter(Giu); TiepTucNgheTrangChu = TiepTucNgheTrangChu.filter(Giu);
+  KetQuaTimKiem = KetQuaTimKiem.filter(Giu); DanhSachChoBan = DanhSachChoBan.filter(Giu); DanhSachKhamPha = DanhSachKhamPha.filter(Giu);
+  DanhSachPhatNguoiDung.forEach(function(P) { P.tracks = (P.tracks || []).filter(Giu); });
+  delete MocLapABMap[LayKhoaBaiHat(Bai)];
+  ViTriDangPhat = BaiHatDangPhat ? DanhSachCho.findIndex(function(T) { return T.id === BaiHatDangPhat.id && T.source === BaiHatDangPhat.source; }) : -1;
+  try { localStorage.setItem('omni_home_continue', JSON.stringify(TiepTucNgheTrangChu)); localStorage.setItem('omni_home_history', JSON.stringify(LichSuNgheTrangChu)); } catch (Loi) {}
+  VeDanhSachCho(); LuuTrangThaiPhatNhac(); VePhanTiepTucNghe(); VePhanLichSuNghe();
+  if (GiaoDienHienTai === 'track-detail' && !BaiHatDangPhat) { ChuyenDoiGiaoDien('personal'); }
+  if (window.ChuanBiBaiTiep && DangPhatNhac) { ChuanBiBaiTiep.chuanBi(); }
+}
+
 function KhoiTaoUngDung() {
   if (window.KhamPhaNhac) { KhamPhaNhac.khoiTao(); }
   TrinhPhatAmThanhChinh = document.getElementById('audio-engine');
@@ -2844,6 +2910,7 @@ function KhoiTaoUngDung() {
   if (window.NhacOfflineVaTocDo) { NhacOfflineVaTocDo.khoiTao([TrinhPhatAmThanhChinh, TrinhPhatAmThanhPhu]); }
   if (window.GiaoDienMoi) { GiaoDienMoi.khoiTao(); }
   if (window.TuyChinhUngDung) { TuyChinhUngDung.khoiTao(); }
+  if (window.NhacCaNhan) { NhacCaNhan.khoiTao(); }
 
   var ThanhKhamPha = document.getElementById('recommendation-discovery-slider');
   document.getElementById('btn-add-favorite-artist').addEventListener('click', ThemNgheSiUaThich);
@@ -2927,7 +2994,8 @@ function KhoiTaoUngDung() {
     (function(Nut) {
       Nut.addEventListener('click', function() {
         var TenView = Nut.getAttribute('data-view');
-        ChuyenDoiGiaoDien(TenView, null);
+        if (TenView === 'home') { LamMoiTrangChu(); }
+        else { ChuyenDoiGiaoDien(TenView, null); }
       });
     })(CacNutDieuHuong[i]);
   }
@@ -3612,9 +3680,11 @@ function KhoiTaoUngDung() {
         HienThiThongBao(BieuTuong.ThanhCong + ' <span>Đã cập nhật bài hát</span>', 'success', 1800);
         DongCuaSoChinhSuaBaiHat();
         DocDuLieuThuVien();
+        if (BaiHatDaSua.source === 'local' && BaiHatDaLuu) { CapNhatThamChieuNhacCaNhan(BaiHatDaLuu); NhacCaNhan.capNhatBai(BaiHatDaLuu); DocDanhSachPhatNguoiDung(); }
         if (BaiHatDangPhat && BaiHatDangPhat.id === BaiHatDaSua.id && BaiHatDangPhat.source === BaiHatDaSua.source) {
           if (DuLieuCapNhat.cover) { delete BaiHatDangPhat.customCoverBase64; }
-          BaiHatDangPhat = Object.assign(BaiHatDangPhat, DuLieuCapNhat);
+          BaiHatDangPhat = Object.assign(BaiHatDangPhat, BaiHatDaLuu || DuLieuCapNhat);
+          if (BaiHatDaSua.source === 'local') { delete BaiHatDangPhat.customCoverBase64; }
           if (BaiHatDaLuu && BaiHatDaLuu.discordCoverUrl) { BaiHatDangPhat.discordCoverUrl = BaiHatDaLuu.discordCoverUrl; }
           CapNhatThanhPhatNhacDuoiCung(BaiHatDangPhat);
           if (GiaoDienHienTai === 'track-detail') { CapNhatGiaoDienTrangChiTiet(BaiHatDangPhat); }
@@ -3939,6 +4009,16 @@ function KhoiTaoUngDung() {
   Promise.allSettled([DocDuLieuThuVien(), DocDanhSachPhatNguoiDung(), KhoiTaoGu]).then(function() { VeToanBoTrangChu(); });
   KhoiPhucPhienLamViec();
 }
+
+window.addEventListener('ngquang-taste-changed', function() {
+  clearTimeout(BoHenGioCapNhatGu);
+  CapNhatThongKeGuNhac();
+  if (GiaoDienHienTai === 'home' && GoiYHienTai && !LoiHuaLamMoiTrangChu) {
+    BoHenGioCapNhatGu = setTimeout(function() {
+      if (GiaoDienHienTai === 'home' && !LoiHuaLamMoiTrangChu) { TaiGoiYCaNhan(false); }
+    }, 900);
+  }
+});
 
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', KhoiTaoUngDung);

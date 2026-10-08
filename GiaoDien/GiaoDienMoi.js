@@ -2,7 +2,7 @@
   'use strict';
   var initialized = false, input, popup, list, status, revision = 0, timer;
   var opened = false, composing = false, selected = -1, options = [], suggestionTracks = [];
-  var cache = new Map(), history = [], featured = null, queueSignature = '', panelCover = '';
+  var cache = new Map(), suggestionPending = new Map(), history = [], featured = null, queueSignature = '', panelCover = '';
   var smallWindow = root.matchMedia('(max-width: 1179px)');
   var core = root.GoiYAmNhac.core;
   function el(id) { return document.getElementById(id); }
@@ -18,7 +18,7 @@
   }
   function localTracks() {
     return unique([].concat(root.LichSuNgheTrangChu || [], root.TiepTucNgheTrangChu || [],
-      root.DanhSachBaiHatThuVien || [], root.NhacOfflineVaTocDo ? root.NhacOfflineVaTocDo.baiDaLuu() : [],
+      root.DanhSachBaiHatThuVien || [], root.NhacCaNhan ? root.NhacCaNhan.baiHat() : [], root.NhacOfflineVaTocDo ? root.NhacOfflineVaTocDo.baiDaLuu() : [],
       (root.DanhSachPhatNguoiDung || []).flatMap(function (playlist) { return playlist.tracks || []; }),
       root.DanhSachCho || [], root.KetQuaTimKiem || [], root.DanhSachChoBan || [], root.DanhSachKhamPha || []));
   }
@@ -82,9 +82,14 @@
   function renderSuggestions(query, remote, message) {
     if (!opened) { return; }
     var normalized = text(query), oldOption = options[selected];
-    var local = localTracks().filter(function (track) { return sourceMatches(track) && (!normalized || text(track.title + ' ' + track.artist).includes(normalized)); });
-    var online = (remote || []).filter(function (track) { return sourceMatches(track); });
-    suggestionTracks = unique(local.concat(online)).slice(0, query ? 5 : 4);
+    var taste = root.GoiYAmNhac.thongKe(root.DanhSachBaiHatThuVien || []);
+    var local = localTracks().filter(sourceMatches);
+    var online = (remote && remote.tracks || []).filter(sourceMatches);
+    suggestionTracks = core.rankSearchTracks(unique(local.concat(online)), query, taste, false).slice(0, query ? 5 : 4);
+    var artists = core.rankSearchArtists([].concat(root.KhamPhaNhac.goiYNgheSi(query), remote && remote.artists || [], unique(local.concat(online)).map(function (track) {
+      var id = track.artistId || '';
+      return { name: core.artistName(track), id: id, picture: track.artistPicture || '', provider: id.split(':')[0] || 'local' };
+    })), query, taste).slice(0, query ? 4 : 3);
     options = []; list.replaceChildren();
     function heading(value) { var label = node('div', 'suggestion-group-title', value); label.setAttribute('role', 'presentation'); list.appendChild(label); }
     function add(option) {
@@ -97,11 +102,11 @@
         copy.appendChild(node('strong', '', option.query)); copy.appendChild(node('small', '', query ? 'Xem tất cả kết quả' : 'Tìm kiếm gần đây'));
       } else if (option.type === 'artist') {
         row.appendChild(artistThumbnail(option.artist)); copy.appendChild(node('strong', '', option.artist.name));
-        copy.appendChild(node('small', '', 'Nghệ sĩ · Mở hồ sơ'));
+        copy.appendChild(node('small', '', option.artist.suggestionReason || 'Nghệ sĩ · Mở hồ sơ'));
       } else {
         row.appendChild(thumbnail(option.track)); copy.appendChild(node('strong', '', option.track.title));
         var offline = root.NhacOfflineVaTocDo.daLuu(option.track);
-        copy.appendChild(node('small', '', (option.track.artist || 'Bài hát') + ' · ' + (offline ? 'Đã lưu offline' : sourceLabel(option.track))));
+        copy.appendChild(node('small', '', (option.track.artist || 'Bài hát') + ' · ' + (option.track.suggestionReason || (offline ? 'Đã lưu offline' : sourceLabel(option.track)))));
       }
       row.appendChild(copy); row.appendChild(node('span', 'suggestion-arrow', option.type === 'track' ? '▶' : '↗'));
       row.addEventListener('pointerdown', function (event) { if (event.button === 0) { event.preventDefault(); } });
@@ -109,16 +114,11 @@
       row.addEventListener('click', function () { activate(option); }); list.appendChild(row);
     }
     if (!query && history.length) { heading('Tìm kiếm gần đây'); history.slice(0, 3).forEach(function (value) { add({ type: 'query', query: value }); }); }
+    if (artists.length) { heading(query ? 'Nghệ sĩ gợi ý' : 'Nghệ sĩ gợi ý cho bạn'); artists.forEach(function (artist) { add({ type: 'artist', artist: artist }); }); }
     if (suggestionTracks.length) { heading(query ? 'Bài hát' : 'Nghe lại'); suggestionTracks.forEach(function (track) { add({ type: 'track', track: track }); }); }
     if (query) {
-      var seen = new Set(), artists = root.KhamPhaNhac.goiYNgheSi(query).concat(unique(local.concat(online)).map(function (track) {
-        var id = track.artistId || '';
-        return { name: core.artistName(track), id: id, picture: track.artistPicture || '', provider: id.split(':')[0] || 'local' };
-      })).filter(function (artist) {
-        var key = text(artist.name);
-        if (!key || !key.includes(normalized) || seen.has(key)) { return false; } seen.add(key); return true;
-      }).slice(0, 2);
-      if (artists.length) { heading('Nghệ sĩ'); artists.forEach(function (artist) { add({ type: 'artist', artist: artist }); }); }
+      var searches = history.filter(function (value) { return text(value) !== normalized && core.matchScore(value, query); }).slice(0, 2);
+      if (searches.length) { heading('Tìm kiếm gần đây'); searches.forEach(function (value) { add({ type: 'query', query: value }); }); }
       add({ type: 'query', query: query });
     }
     status.textContent = message || (!options.length ? 'Tìm bài hát hoặc nghệ sĩ để bắt đầu.' : '↑ ↓ chọn · Enter mở · Esc đóng');
@@ -128,27 +128,45 @@
     }) : -1;
     selectIndex(index);
   }
+  function requestSuggestions(query, cacheKey, source) {
+    if (suggestionPending.has(cacheKey)) { return suggestionPending.get(cacheKey); }
+    var tracks = source === 'all' ? root.GiaoDienUngDung.timKiemTatCa(query) : root.GiaoDienUngDung.timKiemTheoNguon(source, query);
+    var artists = root.GiaoDienUngDung.timKiemNgheSi(query);
+    var request = Promise.allSettled([tracks, artists]).then(function (results) {
+      var songs = results[0].status === 'fulfilled' && Array.isArray(results[0].value) ? results[0].value : [];
+      var artistResult = results[1].status === 'fulfilled' ? results[1].value : null;
+      var names = Array.isArray(artistResult) ? artistResult : artistResult && artistResult.artists || [];
+      var data = { at: Date.now(), tracks: unique(songs).slice(0, 36), artists: Array.isArray(names) ? names.slice(0, 12) : [], failed: results.every(function (result) { return result.status === 'rejected'; }) };
+      if (!data.failed) { if (cache.size >= 20) { cache.delete(cache.keys().next().value); } cache.set(cacheKey, data); }
+      return data;
+    }).finally(function () { suggestionPending.delete(cacheKey); });
+    suggestionPending.set(cacheKey, request); return request;
+  }
   function showSuggestions() {
     var query = input.value.trim().slice(0, 160), run = ++revision; clearTimeout(timer); opened = true; selected = -1;
     var cacheKey = JSON.stringify([root.BoLocHienTai || 'all', text(query)]), saved = cache.get(cacheKey);
     var cached = saved && Date.now() - saved.at < 180000;
     var fetchRemote = query.length >= 2 && !composing && navigator.onLine && !cached;
     input.setAttribute('aria-busy', String(fetchRemote));
-    renderSuggestions(query, cached ? saved.tracks : [], fetchRemote ? 'Đang tìm thêm bài hát…' : !navigator.onLine ? 'Đang offline · Gợi ý từ nhạc có sẵn' : '');
+    renderSuggestions(query, cached ? saved : null, fetchRemote ? 'Đang tìm thêm nghệ sĩ và bài hát…' : !navigator.onLine ? 'Đang offline · Gợi ý từ nhạc có sẵn' : '');
     if (!fetchRemote) { return; }
-    timer = setTimeout(function () {
+    timer = setTimeout(async function () {
       var source = root.BoLocHienTai || 'all';
-      var request = source === 'all' ? root.GiaoDienUngDung.timKiemTatCa(query) : root.GiaoDienUngDung.timKiemTheoNguon(source, query);
-      request.then(function (tracks) {
-        tracks = unique(Array.isArray(tracks) ? tracks : []).slice(0, 24);
-        if (cache.size >= 20) { cache.delete(cache.keys().next().value); } cache.set(cacheKey, { at: Date.now(), tracks: tracks });
+      try {
+        // Only two autocomplete requests may run together. Waited requests
+        // recheck the input revision so old keystrokes never become a backlog.
+        while (suggestionPending.size >= 2 && !suggestionPending.has(cacheKey)) {
+          await Promise.race(Array.from(suggestionPending.values()));
+          if (run !== revision || !opened) { return; }
+        }
+        var data = await requestSuggestions(query, cacheKey, source);
         if (run !== revision || !opened) { return; }
-        input.setAttribute('aria-busy', 'false'); renderSuggestions(query, tracks, '');
-      }).catch(function () {
+        input.setAttribute('aria-busy', 'false'); renderSuggestions(query, data, data.failed ? 'Chưa kết nối được nguồn nhạc · Gợi ý từ bài có sẵn' : '');
+      } catch (_) {
         if (run !== revision || !opened) { return; }
-        input.setAttribute('aria-busy', 'false'); renderSuggestions(query, [], 'Chưa kết nối được nguồn nhạc · Gợi ý từ bài có sẵn');
-      });
-    }, 400);
+        input.setAttribute('aria-busy', 'false'); renderSuggestions(query, null, 'Chưa kết nối được nguồn nhạc · Gợi ý từ bài có sẵn');
+      }
+    }, 500);
   }
   function panelVisible() { return smallWindow.matches ? document.body.classList.contains('now-panel-overlay') : !document.body.classList.contains('now-panel-hidden'); }
   function syncPanelButton() { el('btn-now-panel').setAttribute('aria-pressed', String(panelVisible())); el('btn-now-panel').title = panelVisible() ? 'Ẩn bài đang phát' : 'Hiện bài đang phát'; }
@@ -201,9 +219,9 @@
     }
     updateState();
   }
-  function updateHome() {
+  function updateHome(preferFresh) {
     if (!initialized) { return; }
-    var candidates = unique([].concat(root.TiepTucNgheTrangChu || [], root.DanhSachChoBan || [], root.LichSuNgheTrangChu || [], root.DanhSachBaiHatThuVien || [], localTracks()));
+    var candidates = unique([].concat(preferFresh ? root.DanhSachChoBan || [] : [], root.TiepTucNgheTrangChu || [], root.DanhSachChoBan || [], root.LichSuNgheTrangChu || [], root.DanhSachBaiHatThuVien || [], localTracks()));
     featured = candidates.find(function (track) { return !root.KhamPhaNhac.laBaiNgoai(track); }) || null;
     el('home-featured-title').textContent = featured ? featured.title : 'Bật nhạc, vào gu.';
     el('home-featured-artist').textContent = featured ? featured.artist || 'Trong thư viện của bạn' : 'Bài mới để khám phá. Bài quen để nghe lại.';
@@ -240,6 +258,7 @@
     document.querySelectorAll('.filter-pill').forEach(function (button) { button.addEventListener('click', function () { cache.clear(); closeSuggestions(); }); });
     root.addEventListener('offline', function () { if (opened) { showSuggestions(); } });
     root.addEventListener('online', function () { if (opened) { showSuggestions(); } });
+    root.addEventListener('ngquang-taste-changed', function () { if (opened && !composing) { showSuggestions(); } });
     try { document.body.classList.toggle('now-panel-hidden', localStorage.getItem('ngquang_now_panel') === 'false'); } catch (_) {}
     el('btn-now-panel').addEventListener('click', function () { setPanel(!panelVisible()); }); el('btn-now-close').addEventListener('click', function () { setPanel(false); });
     smallWindow.addEventListener('change', function () { document.body.classList.remove('now-panel-overlay'); syncPanelButton(); });

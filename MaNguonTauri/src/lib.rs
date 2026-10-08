@@ -13,6 +13,7 @@ use services::artists::ArtistService;
 use services::soundcloud::SoundCloudService;
 use services::spotify::SpotifyService;
 use services::stream_server::StreamServer;
+use services::personal::PersonalMusicService;
 use services::youtube::YouTubeService;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -47,6 +48,7 @@ pub fn run() {
             let sp_service = Arc::new(SpotifyService::new(yt_service.clone()));
             let sc_service = Arc::new(SoundCloudService::new());
             let lib_service = Arc::new(LibraryService::new(&data_dir));
+            let personal_service = Arc::new(PersonalMusicService::new(&data_dir).map_err(std::io::Error::other)?);
             let listening_service = Arc::new(ListeningService::new(&data_dir));
             let discovery_service = Arc::new(DiscoveryService::new());
             let spotify_api = Arc::new(SpotifyApi::new());
@@ -58,7 +60,7 @@ pub fn run() {
             discord_service.configure(&cfg);
 
             let stream_server = tauri::async_runtime::block_on(async {
-                StreamServer::start(&data_dir)
+                StreamServer::start(&data_dir, personal_service.clone())
                     .await
                     .expect("Failed to start local stream server")
             });
@@ -69,6 +71,7 @@ pub fn run() {
                 soundcloud: sc_service,
                 stream_server,
                 library: lib_service,
+                personal: personal_service,
                 listening: listening_service,
                 discovery: discovery_service,
                 spotify_api,
@@ -101,6 +104,12 @@ pub fn run() {
             remove_offline_track,
             clear_offline_cache,
             get_library,
+            get_personal_music,
+            begin_personal_music_upload,
+            append_personal_music_upload,
+            commit_personal_music_upload,
+            abort_personal_music_upload,
+            delete_personal_music,
             save_track,
             edit_track,
             delete_track,
