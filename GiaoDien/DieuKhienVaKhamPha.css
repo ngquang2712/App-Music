@@ -1,0 +1,33 @@
+.home-refresh-line { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: -6px 0 18px; color: var(--text-secondary); font-size: 11px; }
+.keyboard-help { position: relative; flex-shrink: 0; }
+.keyboard-help summary { cursor: pointer; color: var(--text-primary); padding: 6px 9px; border-radius: 6px; background: var(--bg-surface-hover); }
+.keyboard-help p { position: absolute; right: 0; top: 26px; width: 235px; padding: 14px; z-index: 10; border: 1px solid var(--border); border-radius: 9px; background: var(--bg-surface); box-shadow: 0 8px 24px #0004; line-height: 2; font-size: 12px; }
+kbd { font: inherit; font-weight: 600; padding: 1px 5px; border: 1px solid var(--border); border-radius: 4px; }
+.feed-genre-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 4px 0 22px; }
+.feed-genre-row > span { color: var(--text-secondary); font-size: 11px; margin-right: 4px; }
+.feed-genre-btn { border: 1px solid var(--border); background: var(--bg-surface-hover); color: var(--text-primary); border-radius: 20px; padding: 8px 13px; cursor: pointer; font-size: 12px; }
+.feed-genre-btn.active { background: var(--accent); border-color: var(--accent); color: var(--accent-contrast); }
+.feed-genre-btn:focus-visible, .seek-step-btn:focus-visible, .discovery-playlist button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.header-home[aria-busy="true"] { animation: home-refresh-pulse 1.1s ease-in-out infinite; }
+@keyframes home-refresh-pulse { 50% { opacity: .5; } }
+#master-player-bar .playback-controls { gap: 6px; }
+#master-player-bar .control-btn { width: 28px; height: 28px; }
+.seek-step-btn { flex-shrink: 0; width: 34px; height: 28px; border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); background: var(--bg-surface-hover); font-size: 11px; font-weight: 600; cursor: pointer; padding: 0; }
+.seek-step-btn:hover { color: var(--accent); border-color: var(--accent); }
+.track-page-main-playback { gap: 8px; }
+.track-page-controls-row { max-width: 800px; }
+.track-page-side-actions.left { flex: 0 0 36px; }
+.track-page-side-actions.right { flex: 1; }
+.track-page-main-playback .seek-step-btn { height: 32px; }
+#player-shortcut-status { position: fixed; bottom: 101px; left: 50%; transform: translateX(-50%); background: var(--bg-surface); color: var(--text-primary); border: 1px solid var(--border); border-radius: 8px; padding: 9px 14px; font-size: 12px; box-shadow: 0 4px 20px #0004; pointer-events: none; z-index: 200; }
+.discovery-playlists-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
+.discovery-playlist { display: flex; align-items: flex-start; gap: 12px; padding: 14px; border: 1px solid var(--border); border-radius: 9px; background: var(--bg-surface-hover); min-width: 0; }
+.discovery-playlist-art { width: 62px; height: 62px; position: relative; border-radius: 6px; overflow: hidden; flex-shrink: 0; display: grid; place-items: center; color: var(--accent); background: var(--bg-surface); font-size: 24px; }
+.discovery-playlist-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.discovery-playlist-copy { min-width: 0; }
+.discovery-playlist-provider { font-size: 8px; letter-spacing: 1px; color: var(--text-secondary); }
+.discovery-playlist h3 { margin: 5px 0; font-size: 13px; overflow-wrap: anywhere; }
+.discovery-playlist p, .discovery-playlist small { font-size: 11px; color: var(--text-secondary); line-height: 1.5; display: block; margin-bottom: 6px; }
+.discovery-playlist button { margin-top: 7px; }
+.speed-keyboard-note { font-size: 10px; color: var(--text-secondary); padding-top: 8px; border-top: 1px solid var(--border); }
+@media (prefers-reduced-motion: reduce) { .header-home[aria-busy="true"] { animation: none; } }

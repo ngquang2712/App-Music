@@ -1,0 +1,15 @@
+{
+  "discordRpcEnabled": true,
+  "discordClientId": "",
+  "volume": 0.38,
+  "repeatMode": "off",
+  "shuffle": false,
+  "theme": "dark",
+  "accentColor": "#1db954",
+  "sidebarExpanded": false,
+  "showSourceBadges": true,
+  "crossfadeEnabled": true,
+  "crossfadeDuration": 5.0,
+  "crossfadeCurveA": 0.0,
+  "crossfadeCurveB": 0.0
+}

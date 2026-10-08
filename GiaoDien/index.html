@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="vi" spellcheck="false">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NgQuang Music App</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+  <link rel="stylesheet" href="DinhDang.css">
+  <link rel="stylesheet" href="GiaoDienMoi.css">
+  <link rel="stylesheet" href="TuyChinhUngDung.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body spellcheck="false">
+  <div id="custom-titlebar">
+    <div class="titlebar-drag-area" data-tauri-drag-region></div>
+    <header class="top-header global-header">
+      <div class="global-brand" data-tauri-drag-region><span class="brand-mark">NQ</span><strong>NgQuang<span>Music App</span></strong></div>
+      <div class="header-search-area">
+        <button id="btn-header-home" class="header-home" type="button" title="Trang chủ" aria-label="Trang chủ"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 10 9-7 9 7v10H3Z"/><path d="M9 20v-7h6v7"/></svg></button>
+        <div class="search-box">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" id="search-input" placeholder="Bạn muốn nghe gì hôm nay?" aria-label="Tìm bài hát hoặc nghệ sĩ" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="search-suggestions-list" maxlength="160" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off">
+          <button id="search-clear-btn" class="clear-btn hidden" type="button" aria-label="Xóa nội dung tìm kiếm"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 6-12 12M6 6l12 12"/></svg></button>
+          <button id="search-submit-btn" class="search-btn" type="button" aria-label="Tìm kiếm">Tìm</button>
+        </div>
+        <div id="search-suggestions" class="search-suggestions" hidden>
+          <div id="search-suggestions-list" class="search-suggestions-list" role="listbox" aria-label="Gợi ý tìm kiếm"></div>
+          <div id="search-suggestions-status" class="search-suggestions-status" role="status" aria-live="polite"></div>
+        </div>
+      </div>
+      <button id="btn-now-panel" type="button" class="header-now-button" aria-label="Bài đang phát" aria-controls="now-playing-panel" aria-pressed="true" title="Bài đang phát"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M15 4v16M6 9l5 3-5 3Z"/></svg></button>
+    </header>
+    <div class="titlebar-right">
+      <button id="btn-min" class="win-btn">
+        <svg width="12" height="12" viewBox="0 0 12 12"><line x1="2" y1="6" x2="10" y2="6" stroke="currentColor" stroke-width="1.5"/></svg>
+      </button>
+      <button id="btn-max" class="win-btn">
+        <svg id="max-icon" width="12" height="12" viewBox="0 0 12 12"><rect x="2" y="2" width="8" height="8" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+      </button>
+      <button id="btn-close" class="win-btn win-close">
+        <svg width="12" height="12" viewBox="0 0 12 12"><line x1="2" y1="2" x2="10" y2="10" stroke="currentColor" stroke-width="1.5"/><line x1="10" y1="2" x2="2" y2="10" stroke="currentColor" stroke-width="1.5"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="app-container">
+    <aside id="app-sidebar" class="sidebar">
+      <div class="sidebar-brand" title="Thư viện của bạn"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4v16M9 4v16m5-16 5 16"/></svg><span class="brand-name">Thư viện</span></div>
+      <div class="sidebar-collection-tabs"><button type="button" data-jump-view="library">Bài hát</button><button type="button" data-jump-view="artists">Nghệ sĩ</button><button type="button" data-jump-view="offline">Offline</button></div>
+      <button id="sidebar-liked" class="sidebar-liked" type="button" title="Bài hát đã thích"><span class="sidebar-liked-art">♥</span><span><strong>Bài hát đã thích</strong><small id="sidebar-liked-total">Bộ sưu tập của bạn</small></span><span class="sidebar-pin" aria-hidden="true">⌁</span></button>
+      <nav class="nav-menu">
+        <div id="sidebar-top-nav-group" class="sidebar-top-nav-group">
+          <button class="nav-item active" data-view="home">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/>
+            </svg>
+            <span class="nav-label">Trang chủ</span>
+          </button>
+          <button class="nav-item" data-view="explore">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <span class="nav-label">Tìm kiếm</span>
+          </button>
+          <button class="nav-item" data-view="library">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+            <span class="nav-label">Thư viện</span>
+            <span id="library-count-badge" class="count-pill">0</span>
+          </button>
+          <button class="nav-item" data-view="offline" title="Nhạc đã lưu để nghe khi không có mạng">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4H3v-4M12 3v12m-5-5 5 5 5-5"/></svg>
+            <span class="nav-label">Nhạc offline</span><span id="offline-count-badge" class="count-pill">0</span>
+          </button>
+          <button id="btn-open-downloads" class="nav-item">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span class="nav-label">Downloads</span>
+          </button>
+          <button class="nav-item" data-view="artists" title="Nghệ sĩ yêu thích">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg>
+            <span class="nav-label">Nghệ sĩ</span><span id="artists-count-badge" class="count-pill">0</span>
+          </button>
+          <button class="nav-item" data-view="genres" title="Thể loại và gu nhạc">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>
+            <span class="nav-label">Thể loại</span>
+          </button>
+          <button id="btn-open-settings" class="nav-item">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <span class="nav-label">Cài đặt</span>
+          </button>
+          <div class="sidebar-divider"></div>
+        </div>
+        <div class="sidebar-playlist-header-wrap">
+          <button id="btn-sidebar-create-playlist" class="nav-item btn-create-playlist">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span class="nav-label">Tạo playlist</span>
+          </button>
+          <button id="btn-collapse-top-nav" class="sidebar-collapse-nav-btn" aria-label="Thu gọn mục trên">
+            <svg id="collapse-top-nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="18 15 12 9 6 15"/>
+            </svg>
+          </button>
+        </div>
+        <div id="sidebar-playlists-list" class="sidebar-playlists-list"></div>
+      </nav>
+      <div class="sidebar-footer">
+        <button id="btn-toggle-sidebar" class="sidebar-toggle-btn">
+          <svg id="sidebar-toggle-icon" class="sidebar-toggle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+          <span class="toggle-text">Thu gọn menu</span>
+        </button>
+      </div>
+    </aside>
+    <main class="main-content" data-active-view="home">
+
+      <section id="view-home" class="view-panel active">
+        <div class="section-title-row home-title-row">
+          <div>
+            <span class="page-eyebrow">NGQUANG MUSIC</span><h1>Nhạc cho ngày của bạn</h1>
+          </div>
+          <div class="view-layout-switcher">
+            <button id="btn-home-layout-compact" class="layout-toggle-btn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="9" y1="6" x2="21" y2="6"/>
+                <line x1="9" y1="12" x2="21" y2="12"/>
+                <line x1="9" y1="18" x2="21" y2="18"/>
+                <circle cx="4" cy="6" r="1.5" fill="currentColor"/>
+                <circle cx="4" cy="12" r="1.5" fill="currentColor"/>
+                <circle cx="4" cy="18" r="1.5" fill="currentColor"/>
+              </svg>
+            </button>
+            <button id="btn-home-layout-grid" class="layout-toggle-btn active">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+                <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+                <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+                <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <article id="home-featured" class="home-featured">
+          <div class="home-featured-art"><div class="featured-record" aria-hidden="true"><span>nq</span></div><img id="home-featured-cover" alt="Ảnh bìa bài được gợi ý" hidden></div>
+          <div class="home-featured-copy"><span id="home-featured-label" class="featured-eyebrow">KHÔNG GIAN ÂM NHẠC CỦA BẠN</span><h2 id="home-featured-title">Bật nhạc, vào gu.</h2><p id="home-featured-artist">Bài mới để khám phá. Bài quen để nghe lại.</p><div class="home-featured-actions"><button id="home-featured-play" type="button" class="featured-play"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="m7 4 14 8-14 8Z"/></svg><span id="home-featured-play-label">Tìm bài hát</span></button><button type="button" class="featured-library" data-jump-view="library">Thư viện của bạn ↗</button></div></div>
+        </article>
+        <div class="home-browse-tabs"><button type="button" class="active" data-jump-view="home">Tất cả</button><button type="button" data-jump-view="genres">Theo thể loại</button><button type="button" data-jump-view="artists">Nghệ sĩ</button><button type="button" data-jump-view="offline">Đã lưu offline</button></div>
+        <div class="home-shortcuts">
+          <button class="home-shortcut liked-shortcut" type="button" data-jump-view="library"><span class="shortcut-icon">♥</span><span><strong>Bài hát yêu thích</strong><small id="home-liked-count">Bộ sưu tập của bạn</small></span></button>
+          <button class="home-shortcut artist-shortcut" type="button" data-jump-view="artists"><span class="shortcut-icon">♪</span><span><strong>Nghệ sĩ yêu thích</strong><small id="home-artists-count">Thả tim ca sĩ bạn thích</small></span></button>
+          <button class="home-shortcut genre-shortcut" type="button" data-jump-view="genres"><span class="shortcut-icon">♫</span><span><strong>Khám phá theo gu</strong><small>Ballad, Lo-fi và nhiều hơn nữa</small></span></button>
+        </div>
+        <div id="home-section-continue" class="home-section" style="display: none;">
+          <div class="home-section-header">
+            <div class="home-section-title-wrap">
+              <h2 class="home-section-title">Continue Listening</h2>
+              <p class="home-section-subtitle">Tiếp tục thưởng thức các bài hát bạn đang nghe dở</p>
+            </div>
+            <div class="home-section-actions">
+              <button class="home-scroll-btn btn-scroll-left" data-target="home-continue-grid">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              <button class="home-scroll-btn btn-scroll-right" data-target="home-continue-grid">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
+          </div>
+          <div id="home-continue-grid" class="home-carousel-track"></div>
+        </div>
+        <div id="home-section-hot" class="home-section">
+          <div class="home-section-header">
+            <div class="home-section-title-wrap">
+              <h2 class="home-section-title">Hot</h2>
+              <p class="home-section-subtitle">Các bài hát lượt xem cao nhất với thời gian mới phát hành gần đây</p>
+            </div>
+            <div class="home-section-actions">
+              <button id="btn-refresh-hot" class="home-action-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                <span>Làm mới</span>
+              </button>
+              <button class="home-scroll-btn btn-scroll-left" data-target="home-hot-grid">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              <button class="home-scroll-btn btn-scroll-right" data-target="home-hot-grid">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
+          </div>
+          <div id="home-hot-grid" class="home-carousel-track"></div>
+        </div>
+        <div id="home-section-foryou" class="home-section">
+          <div class="home-section-header">
+            <div class="home-section-title-wrap">
+              <h2 class="home-section-title">Dành cho bạn</h2>
+              <p id="foryou-subtitle" class="home-section-subtitle">Các bài hát đề xuất cùng gu âm nhạc dựa trên lịch sử nghe của bạn</p>
+            </div>
+            <div class="home-section-actions">
+              <button id="btn-refresh-foryou" class="home-action-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                <span>Đổi gợi ý</span>
+              </button>
+              <button class="home-scroll-btn btn-scroll-left" data-target="home-foryou-grid">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              <button class="home-scroll-btn btn-scroll-right" data-target="home-foryou-grid">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
+          </div>
+          <div id="home-foryou-grid" class="home-carousel-track"></div>
+        </div>
+        <div id="home-section-mixes" class="home-section">
+          <div class="home-section-header">
+            <div class="home-section-title-wrap">
+              <h2 class="home-section-title">Mix theo gu của bạn</h2>
+              <p class="home-section-subtitle">Bài quen, nhạc mới và những playlist bạn có thể lưu để nghe lại.</p>
+            </div>
+          </div>
+          <div id="home-mixes-grid" class="recommendation-mixes" aria-live="polite"></div>
+        </div>
+        <div id="home-section-history" class="home-section">
+          <div class="home-section-header">
+            <div class="home-section-title-wrap">
+              <h2 class="home-section-title">History</h2>
+              <p class="home-section-subtitle">Các bài hát bạn đã thưởng thức gần đây</p>
+            </div>
+            <div class="home-section-actions">
+              <button id="btn-clear-history" class="home-action-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                <span>Xóa lịch sử</span>
+              </button>
+              <button class="home-scroll-btn btn-scroll-left" data-target="home-history-grid">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              <button class="home-scroll-btn btn-scroll-right" data-target="home-history-grid">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
+          </div>
+          <div id="home-history-grid" class="home-carousel-track"></div>
+        </div>
+        <div id="home-section-discovery" class="home-section">
+          <div class="home-section-header">
+            <div class="home-section-title-wrap">
+              <h2 class="home-section-title">Khám phá thêm</h2>
+              <p id="discovery-subtitle" class="home-section-subtitle">Thử nhạc mới và những nghệ sĩ bạn chưa nghe trong app.</p>
+            </div>
+            <div class="home-section-actions">
+              <button id="btn-refresh-discovery" class="home-action-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                <span>Làm mới</span>
+              </button>
+              <button class="home-scroll-btn btn-scroll-left" data-target="home-discovery-grid">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              <button class="home-scroll-btn btn-scroll-right" data-target="home-discovery-grid">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
+          </div>
+          <div id="home-discovery-grid" class="home-carousel-track"></div>
+        </div>
+        <div id="home-section-artists" class="home-section">
+          <div class="home-section-header">
+            <div class="home-section-title-wrap">
+              <h2 class="home-section-title">Nghệ sĩ bạn có thể thích</h2>
+              <p class="home-section-subtitle">Khám phá thêm nghệ sĩ từ các bài nhạc được chọn cho bạn.</p>
+            </div>
+          </div>
+          <div id="home-artists-grid" class="recommendation-artists"></div>
+        </div>
+      </section>
+      <section id="view-explore" class="view-panel" style="display: none;">
+        <div class="search-toolbar">
+          <div class="content-tabs" role="group" aria-label="Loại kết quả"><button type="button" class="content-tab active" data-search-type="all" aria-pressed="true">Tất cả</button><button type="button" class="content-tab" data-search-type="artists" aria-pressed="false">Nghệ sĩ</button><button type="button" class="content-tab" data-search-type="tracks" aria-pressed="false">Bài hát</button></div>
+          <div class="source-filters" role="group" aria-label="Nguồn bài hát"><button class="filter-pill active" data-filter="all">Mọi nguồn</button><button class="filter-pill" data-filter="youtube">YouTube</button><button class="filter-pill" data-filter="soundcloud">SoundCloud</button><button class="filter-pill" data-filter="spotify">Spotify</button><button class="filter-pill" data-filter="deezer">Deezer</button></div>
+        </div>
+        <div id="results-meta" class="section-title-row" style="display: none;">
+          <div>
+            <h1 id="explore-title">Kết quả tìm kiếm</h1>
+            <p id="results-count">0 kết quả</p>
+          </div>
+          <div class="view-layout-switcher">
+            <button id="btn-layout-compact" class="layout-toggle-btn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="9" y1="6" x2="21" y2="6"/>
+                <line x1="9" y1="12" x2="21" y2="12"/>
+                <line x1="9" y1="18" x2="21" y2="18"/>
+                <circle cx="4" cy="6" r="1.5" fill="currentColor"/>
+                <circle cx="4" cy="12" r="1.5" fill="currentColor"/>
+                <circle cx="4" cy="18" r="1.5" fill="currentColor"/>
+              </svg>
+            </button>
+            <button id="btn-layout-grid" class="layout-toggle-btn active">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+                <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+                <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+                <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <section id="search-artists-section" class="search-artists-section hidden" aria-label="Nghệ sĩ tìm được"><div class="home-section-header"><h2>Nghệ sĩ</h2><span id="search-artists-status" class="catalog-status" role="status"></span></div><div id="search-artists-grid" class="artist-cards-grid"></div></section>
+        <div id="search-song-heading" class="search-song-heading hidden"><h2>Bài hát</h2><label>Thể loại <select id="search-genre-filter"><option value="all">Tất cả thể loại</option></select></label></div>
+        <div id="search-loader" class="loader-container hidden">
+          <div class="spinner"></div>
+          <p>Đang tìm kiếm...</p>
+        </div>
+        <div id="tracks-container" class="tracks-grid"></div>
+        <div id="empty-state" class="empty-placeholder">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3">
+            <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+          </svg>
+          <h3>Tìm âm nhạc bạn yêu thích</h3>
+          <p>Nhập tên bài hát hoặc nghệ sĩ rồi nhấn Enter.</p>
+          <div class="preset-chips">
+            <button class="chip" data-query="Nhạc trẻ tiktok">Nhạc trẻ tiktok</button>
+            <button class="chip" data-query="Nhạc ballad tâm trạng">Nhạc ballad tâm trạng</button>
+            <button class="chip" data-query="remix tiktok">remix tiktok</button>
+          </div>
+        </div>
+        <section id="search-browse-section" class="browse-section"><div class="home-section-header"><h2>Duyệt theo thể loại</h2><button type="button" class="text-action" data-jump-view="genres">Xem tất cả</button></div><div id="search-browse-genres" class="genre-cards-grid"></div></section>
+      </section>
+      <section id="view-library" class="view-panel">
+        <div class="content-tabs library-content-tabs"><button type="button" class="content-tab active">Bài hát yêu thích</button><button type="button" class="content-tab" data-jump-view="artists">Nghệ sĩ</button><button type="button" class="content-tab" data-jump-view="genres">Thể loại</button></div>
+        <div class="section-title-row">
+          <div>
+            <h1>Bài hát yêu thích</h1>
+            <p id="library-total-tracks">0 bài hát</p>
+          </div>
+          <div class="view-layout-switcher">
+            <button id="btn-library-layout-compact" class="layout-toggle-btn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="9" y1="6" x2="21" y2="6"/>
+                <line x1="9" y1="12" x2="21" y2="12"/>
+                <line x1="9" y1="18" x2="21" y2="18"/>
+                <circle cx="4" cy="6" r="1.5" fill="currentColor"/>
+                <circle cx="4" cy="12" r="1.5" fill="currentColor"/>
+                <circle cx="4" cy="18" r="1.5" fill="currentColor"/>
+              </svg>
+            </button>
+            <button id="btn-library-layout-grid" class="layout-toggle-btn active">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+                <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+                <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+                <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div id="library-container" class="tracks-grid"></div>
+        <div id="library-empty" class="empty-placeholder" style="display: none;">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3">
+            <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
+          </svg>
+          <h3>Thư viện trống</h3>
+          <p>Lưu bài hát yêu thích vào đây</p>
+          <button id="btn-go-search" class="primary-btn">Tìm nhạc</button>
+        </div>
+      </section>
+      <section id="view-offline" class="view-panel" style="display:none">
+        <div class="section-title-row offline-title-row"><div><span class="page-eyebrow">ÂM NHẠC LUÔN BÊN BẠN</span><h1>Nhạc offline</h1><p id="offline-summary">Đang đọc những bài đã lưu…</p></div><button id="offline-play-all" type="button" class="primary-btn" disabled>Phát tất cả</button></div>
+        <div class="offline-storage-card"><div><strong>Bộ nhớ nhạc trên máy</strong><span id="offline-storage-label">0 MB / 2 GB</span></div><progress id="offline-storage-progress" max="100" value="0" aria-label="Dung lượng nhạc offline"></progress><p>App tự lưu đủ bài trong lúc nghe. Khi tải xong, bài có dấu <strong>Đã lưu</strong> sẽ phát được dù mất mạng hoặc mở lại app.</p></div>
+        <div class="offline-toolbar"><button id="offline-now-save" type="button" class="outline-btn" disabled>Lưu bài đang nghe</button><button id="offline-refresh" type="button" class="outline-btn">Làm mới</button><button id="offline-clear" type="button" class="outline-btn">Xóa bản nhạc offline</button></div>
+        <p id="offline-service-status" class="setting-subtitle" role="status"></p><div id="offline-tracks" class="offline-tracks"></div>
+        <div id="offline-empty" class="offline-empty"><span class="offline-empty-icon">♫</span><h3>Nhạc bạn nghe sẽ ở đây</h3><p>Phát một bài khi có mạng, chờ tải đủ rồi quay lại đây để nghe offline.</p><button type="button" class="primary-btn" data-focus-search>Tìm nhạc</button></div>
+      </section>
+      <section id="view-artists" class="view-panel" style="display:none">
+        <div class="section-title-row"><div><span class="page-eyebrow">THƯ VIỆN CỦA BẠN</span><h1>Nghệ sĩ yêu thích</h1><p id="favorite-artists-summary">Những ca sĩ bạn đã thả tim.</p></div><button id="btn-find-artists" class="outline-btn" type="button">Tìm nghệ sĩ</button></div>
+        <div class="content-tabs library-content-tabs"><button type="button" class="content-tab" data-jump-view="library">Bài hát yêu thích</button><button type="button" class="content-tab active">Nghệ sĩ</button><button type="button" class="content-tab" data-jump-view="genres">Thể loại</button></div>
+        <div id="liked-artists-grid" class="artist-cards-grid"></div>
+        <div id="liked-artists-empty" class="empty-placeholder"><h3>Gu nhạc bắt đầu từ nghệ sĩ bạn thích</h3><p>Tìm một ca sĩ, mở hồ sơ rồi bấm tim. App sẽ dùng lựa chọn đó để gợi ý nhạc.</p><button type="button" class="primary-btn" data-focus-search>Tìm nghệ sĩ</button></div>
+      </section>
+      <section id="view-genres" class="view-panel" style="display:none">
+        <div class="section-title-row"><div><span class="page-eyebrow">KHÁM PHÁ</span><h1>Mỗi gu, một thế giới</h1><p>Thả tim tối đa 6 thể loại để chọn gu. Bấm vào thẻ để nghe và lưu Mix.</p></div></div>
+        <div id="liked-genres-summary" class="genre-summary" role="status">Chọn màu nhạc của bạn.</div>
+        <div id="browse-genres-grid" class="genre-cards-grid"></div>
+        <p class="catalog-footnote">Thể loại được nhận diện từ nhãn dữ liệu và tên bài. Những bài chưa đủ thông tin sẽ chưa được gán thể loại.</p>
+      </section>
+      <section id="view-artist" class="view-panel artist-profile-panel" style="display:none">
+        <button id="btn-artist-back" type="button" class="profile-back">← Quay lại</button>
+        <div class="artist-hero"><div id="artist-profile-avatar" class="artist-profile-avatar"></div><div class="artist-hero-copy"><span id="artist-profile-provider" class="page-eyebrow">NGHỆ SĨ</span><h1 id="artist-profile-name"></h1><div id="artist-profile-genres" class="profile-genre-labels"></div><p id="artist-profile-meta"></p></div></div>
+        <div class="profile-actions"><button id="btn-play-artist" class="primary-btn round-play-btn" type="button">Nghe trong app</button><button id="btn-heart-artist" class="outline-btn artist-heart-control" type="button" aria-pressed="false">Yêu thích</button><button id="btn-open-artist-source" class="text-action" type="button">Mở hồ sơ gốc ↗</button></div>
+        <p id="artist-profile-status" class="catalog-status" role="status" aria-live="polite"></p>
+        <section class="artist-track-section"><div class="home-section-header"><h2>Bài hát trong app</h2><span id="artist-local-count" class="catalog-status"></span></div><div id="artist-local-tracks" class="artist-track-list"></div></section>
+        <section id="artist-catalog-section" class="artist-track-section hidden"><div class="home-section-header"><h2 id="artist-catalog-title">Danh mục bài hát</h2></div><div id="artist-catalog-tracks" class="artist-track-list"></div></section>
+        <section id="artist-albums-section" class="artist-track-section hidden"><div class="home-section-header"><h2>Album và đĩa đơn</h2></div><div id="artist-albums-grid" class="album-cards-grid"></div></section>
+      </section>
+      <section id="view-genre-detail" class="view-panel genre-detail-panel" style="display:none">
+        <button id="btn-genre-back" type="button" class="profile-back">← Thể loại</button><div class="genre-detail-hero"><span class="page-eyebrow">KHÁM PHÁ THEO GU</span><h1 id="genre-detail-title"></h1><p id="genre-detail-description"></p></div>
+        <div class="profile-actions"><button id="btn-play-genre" class="primary-btn" type="button">Nghe Mix</button><button id="btn-heart-genre" class="outline-btn" type="button" aria-pressed="false">Yêu thích thể loại</button><button id="btn-save-genre-mix" class="outline-btn" type="button">Lưu playlist</button></div>
+        <p id="genre-detail-status" class="catalog-status" role="status" aria-live="polite"></p><div id="genre-detail-tracks" class="tracks-grid"></div>
+      </section>
+      <section id="view-playlist" class="view-panel">
+        <div class="playlist-header">
+          <div class="playlist-cover-large" id="btn-playlist-cover-view">
+            <div id="playlist-cover-art" class="playlist-cover-art">
+              <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+            </div>
+          </div>
+          <div class="playlist-details">
+            <div class="playlist-title-row">
+              <h1 id="playlist-title-display" class="playlist-title">Tên Playlist</h1>
+            </div>
+            <p id="playlist-description-display" class="playlist-description" style="display: none;"></p>
+            <p id="playlist-meta-info" class="playlist-meta">0 bài hát • 0 phút</p>
+            <div class="playlist-action-bar">
+              <button id="btn-play-playlist" class="playlist-play-btn">
+                <svg width="22" height="22" viewBox="0 0 24 24"><polygon points="8,5.5 18,12 8,18.5" fill="currentColor" stroke="currentColor" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/></svg>
+              </button>
+              <button id="btn-edit-playlist-modal-open" class="outline-btn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                <span>Chỉnh sửa</span>
+              </button>
+              <button id="btn-delete-current-playlist" class="outline-btn danger">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                <span>Xóa playlist</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div id="playlist-tracks-container" class="playlist-tracks-list"></div>
+        <div id="playlist-empty" class="empty-placeholder" style="display: none;">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3">
+            <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+          </svg>
+          <h3>Playlist chưa có bài hát</h3>
+          <p>Kéo thả bài hát vào đây hoặc nhấn biểu tượng "+" trên bài hát để thêm vào playlist</p>
+        </div>
+      </section>
+      <section id="view-track-detail" class="view-panel track-page-panel" style="display: none;">
+        <div id="track-page-ambient" class="track-page-ambient"></div>
+        <div class="track-page-overlay"></div>
+        <div id="track-page-lights" class="track-page-lights" aria-hidden="true"></div>
+        <div id="track-page-waves" class="track-page-waves" aria-hidden="true">
+          <canvas id="track-page-wave-canvas"></canvas>
+        </div>
+        <div class="track-page-topbar">
+          <button id="btn-track-page-back" class="track-page-back-btn" aria-label="Quay lại">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+            </svg>
+            <span>Quay lại</span>
+          </button>
+          <div class="track-page-topbar-actions">
+            <button id="btn-track-page-effects" class="track-page-back-btn" aria-label="Chỉnh hiệu ứng và màu sóng">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3" fill="var(--bg-base)"/><circle cx="15" cy="17" r="3" fill="var(--bg-base)"/></svg>
+              <span>Hiệu ứng</span>
+            </button>
+            <button id="btn-track-page-expand" class="track-page-back-btn track-expand-button" type="button" aria-label="Phóng to cửa sổ" title="Phóng to cửa sổ"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6m18-12-7 7M3 21l7-7"/></svg></button>
+            <div id="track-page-badge" class="track-page-source-badge">OMNI</div>
+          </div>
+        </div>
+        <div class="track-page-container">
+          <div class="track-page-artwork-stage">
+            <canvas id="track-page-spectrum-canvas" class="track-page-spectrum-canvas" aria-hidden="true"></canvas>
+            <div class="track-page-artwork-wrap" id="track-page-artwork-wrap" role="button" tabindex="0" aria-label="Xem ảnh bài hát">
+              <div class="track-page-artwork-placeholder" aria-hidden="true">
+                <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M9 18V5l12-2v13M9 8l12-2"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+              </div>
+              <img id="track-page-cover" class="track-page-cover" alt="" style="display: none;">
+              <div class="track-page-artwork-hint">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+          <div class="track-page-meta">
+            <h1 id="track-page-title" class="track-page-title">—</h1>
+            <div id="track-page-artist" class="track-page-artist">—</div>
+          </div>
+          <div class="track-page-timeline-section">
+            <span id="track-page-time-current" class="track-page-time">0:00</span>
+            <div class="track-page-progress-wrapper">
+              <input type="range" id="track-page-seek-slider" min="0" max="100" step="0.1" value="0" class="custom-slider track-page-slider" aria-label="Tua bài hát">
+              <div id="track-page-progress-fill" class="track-page-progress-fill"></div>
+            </div>
+            <span id="track-page-time-total" class="track-page-time">0:00</span>
+          </div>
+          <div class="track-page-controls-row">
+            <div class="track-page-side-actions left">
+              <button id="track-page-btn-more" class="track-page-action-btn" aria-label="Tùy chọn bài hát" aria-haspopup="menu" aria-expanded="false" aria-controls="track-page-menu">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><circle cx="4" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="20" cy="12" r="1.6"/></svg>
+              </button>
+              <div id="track-page-menu" class="track-page-menu hidden" role="menu" aria-label="Tùy chọn bài hát">
+                <button id="track-page-btn-fav" class="track-page-menu-item" role="menuitem">
+                  <span id="track-page-fav-icon" aria-hidden="true"></span><span id="track-page-fav-label">Thêm vào thư viện</span>
+                </button>
+                <button id="track-page-btn-add-playlist" class="track-page-menu-item" role="menuitem">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg><span>Thêm vào playlist</span>
+                </button>
+                <button id="track-page-btn-edit" class="track-page-menu-item" role="menuitem">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 5 5L8 21H3v-5Z"/></svg><span>Chỉnh sửa bài hát</span>
+                </button>
+                <button id="track-page-btn-download" class="track-page-menu-item" role="menuitem">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M12 3v12M7 10l5 5 5-5"/></svg><span>Tải bài hát</span>
+                </button>
+              </div>
+            </div>
+            <div class="track-page-main-playback">
+              <button id="track-page-btn-shuffle" class="track-page-ctrl-btn" aria-label="Trộn bài">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.6-8.6c.8-1.1 2-1.7 3.3-1.7H21"/>
+                  <path d="M17 2l4 4-4 4"/><path d="M2 6h1.4c1.3 0 2.5.6 3.3 1.7l1.8 2.3"/>
+                  <path d="M13.5 14l1.8 2.3c.8 1.1 2 1.7 3.3 1.7H21"/><path d="M17 14l4 4-4 4"/>
+                </svg>
+              </button>
+              <button id="track-page-btn-prev" class="track-page-ctrl-btn" aria-label="Bài trước">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+              </button>
+              <button id="track-page-btn-play-pause" class="track-page-play-btn" aria-label="Phát hoặc Tạm dừng">
+                <span id="track-page-play-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" style="transform: translateX(1px);"><path d="M7.5 4.3c-.8-.5-1.5-.1-1.5.9v13.6c0 1 .7 1.4 1.5.9l11.8-6.8c.8-.5.8-1.3 0-1.8L7.5 4.3z"/></svg>
+                </span>
+              </button>
+              <button id="track-page-btn-next" class="track-page-ctrl-btn" aria-label="Bài tiếp">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M16 6h2v12h-2zm-10 0l8.5 6L6 18z"/></svg>
+              </button>
+              <button id="track-page-btn-repeat" class="track-page-ctrl-btn" aria-label="Lặp lại">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+                </svg>
+              </button>
+            </div>
+            <div class="track-page-side-actions right">
+              <button type="button" class="speed-open-btn" data-speed-open aria-expanded="false" aria-controls="speed-popover">1×</button>
+              <button type="button" class="eq-open-btn" data-eq-open aria-expanded="false" aria-controls="eq-modal" disabled>EQ</button>
+              <div class="track-page-volume-container">
+                <button id="track-page-btn-mute" class="track-page-action-btn" aria-label="Âm lượng">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg>
+                </button>
+                <div class="track-page-volume-slider-wrap">
+                  <input type="range" id="track-page-volume-slider" min="0" max="100" value="80" class="custom-slider track-page-volume-slider" aria-label="Âm lượng">
+                  <div id="track-page-volume-fill" class="track-page-volume-fill"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+    <aside id="now-playing-panel" class="now-playing-panel" aria-label="Bài đang phát">
+      <div id="now-playing-ambient" class="now-playing-ambient" aria-hidden="true"></div>
+      <div class="now-panel-heading"><h2>Bài đang phát</h2><button id="btn-now-close" type="button" class="now-icon-button" aria-label="Ẩn bài đang phát"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 6-12 12M6 6l12 12"/></svg></button></div>
+      <div class="now-panel-content">
+        <button id="btn-now-expand" class="now-cover-button" type="button" aria-label="Mở màn hình nghe nhạc" disabled><span class="now-cover-placeholder" aria-hidden="true">♫</span><img id="now-playing-cover" alt="" hidden><span class="now-cover-expand" aria-hidden="true"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 3h6v6M9 21H3v-6m18-12-7 7M3 21l7-7"/></svg></span></button>
+        <div class="now-title-row"><h3 id="now-playing-title">Một bài hát, một tâm trạng</h3><button id="btn-now-heart" class="now-icon-button" type="button" aria-label="Yêu thích bài hát" aria-pressed="false" disabled></button></div>
+        <button id="btn-now-artist" class="now-artist" type="button" disabled>Chọn nhạc và tận hưởng</button>
+        <div class="now-status-line"><span id="now-status-dot" class="now-status-dot" aria-hidden="true"></span><span id="now-playing-status" role="status">Không gian âm nhạc của bạn</span></div>
+        <div class="now-track-labels"><span id="now-source-label">NGQUANG MUSIC</span><span id="now-offline-label"></span></div>
+        <section class="now-sound-card"><span class="now-card-eyebrow">ÂM THANH THEO Ý BẠN</span><h4>Chạm vào từng sắc âm.</h4><p>Chỉnh EQ riêng cho bài này, hoặc thay đổi nhịp nghe.</p><div class="now-sound-actions"><button type="button" class="eq-open-btn" data-eq-open aria-expanded="false" aria-controls="eq-modal" disabled>EQ bài này</button><button type="button" class="speed-open-btn" data-speed-open aria-expanded="false" aria-controls="speed-popover">1×</button></div></section>
+        <section class="now-next-section"><div class="now-next-heading"><h4>Tiếp theo</h4><button id="btn-now-queue" type="button" aria-label="Mở toàn bộ danh sách chờ">Xem tất cả</button></div><p id="now-next-note">Trong danh sách của bạn</p><div id="now-next-list"></div></section>
+      </div>
+    </aside>
+  </div>
+  <footer id="master-player-bar" class="player-bar">
+    <div class="player-left" draggable="true">
+      <div class="track-cover-wrapper">
+        <div class="card-cover-placeholder" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13M9 8l12-2"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+        </div>
+        <img id="player-cover" alt="" class="track-cover-img" style="display: none;">
+      </div>
+      <div class="track-info">
+        <div id="player-title" class="track-title">NgQuang Music App</div>
+        <div id="player-artist" class="track-artist">Chọn bài hát để phát</div><span id="current-offline-status" class="current-offline-status"></span>
+      </div>
+      <div class="player-more-dropdown-container">
+        <button id="player-btn-more" class="icon-btn" aria-label="Tùy chọn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+        </button>
+        <div id="player-more-menu" class="player-action-menu hidden" style="display: none;">
+          <button id="player-menu-fav" class="action-menu-item">
+            <span class="menu-item-icon" id="player-menu-fav-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+            </span>
+            <span id="player-menu-fav-text">Yêu thích</span>
+          </button>
+          <button id="player-menu-add-playlist" class="action-menu-item">
+            <span class="menu-item-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </span>
+            <span>Thêm vào playlist</span>
+          </button>
+          <button id="player-menu-edit" class="action-menu-item">
+            <span class="menu-item-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </span>
+            <span>Chỉnh sửa bài hát</span>
+          </button>
+          <button id="player-menu-download" class="action-menu-item">
+            <span class="menu-item-icon" id="player-menu-download-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </span>
+            <span>Tải bài hát</span>
+          </button>
+          <div class="action-menu-divider"></div>
+          <button id="player-menu-copy-url" class="action-menu-item">
+            <span class="menu-item-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+            </span>
+            <span>Sao chép URL bài hát</span>
+          </button>
+          <button id="player-menu-copy-title" class="action-menu-item">
+            <span class="menu-item-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line></svg>
+            </span>
+            <span>Sao chép tên bài hát</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="player-center">
+      <div class="playback-controls">
+        <button id="btn-shuffle" class="control-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.6-8.6c.8-1.1 2-1.7 3.3-1.7H21"/>
+            <path d="M17 2l4 4-4 4"/>
+            <path d="M2 6h1.4c1.3 0 2.5.6 3.3 1.7l1.8 2.3"/>
+            <path d="M13.5 14l1.8 2.3c.8 1.1 2 1.7 3.3 1.7H21"/>
+            <path d="M17 14l4 4-4 4"/>
+          </svg>
+        </button>
+        <button id="btn-prev" class="control-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+        </button>
+        <button id="btn-play-pause" class="play-pause-btn">
+          <span id="play-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="transform: translateX(1px);"><path d="M7.5 4.3c-.8-.5-1.5-.1-1.5.9v13.6c0 1 .7 1.4 1.5.9l11.8-6.8c.8-.5.8-1.3 0-1.8L7.5 4.3z"/></svg>
+          </span>
+        </button>
+        <button id="btn-next" class="control-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M16 6h2v12h-2zm-10 0l8.5 6L6 18z"/></svg>
+        </button>
+        <button id="btn-repeat" class="control-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 1l4 4-4 4"/>
+            <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+            <path d="M7 23l-4-4 4-4"/>
+            <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+          </svg>
+        </button>
+      </div>
+      <div class="progress-container">
+        <span id="time-current" class="time-text">0:00</span>
+        <div class="progress-bar-wrapper">
+          <input type="range" id="seek-slider" min="0" max="100" value="0" class="custom-slider">
+          <div id="progress-fill" class="progress-fill"></div>
+          <div id="ab-segment-highlight" class="ab-segment-highlight"></div>
+          <div id="ab-marker-start" class="ab-marker ab-marker-start"></div>
+          <div id="ab-marker-end" class="ab-marker ab-marker-end"></div>
+        </div>
+        <span id="time-total" class="time-text">0:00</span>
+      </div>
+    </div>
+    <div class="player-right">
+      <button type="button" class="speed-open-btn" data-speed-open aria-expanded="false" aria-controls="speed-popover">1×</button>
+      <button type="button" class="eq-open-btn" data-eq-open aria-expanded="false" aria-controls="eq-modal" disabled>EQ</button>
+      <button id="btn-cache-current" type="button" class="offline-save-btn" aria-label="Lưu bài để nghe offline" disabled><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4H3v-4M12 3v12m-5-5 5 5 5-5"/></svg></button>
+      <div id="audio-visualizer" class="visualizer-waves">
+        <span class="bar bar-1"></span><span class="bar bar-2"></span><span class="bar bar-3"></span><span class="bar bar-4"></span>
+      </div>
+      <div class="volume-container">
+        <button id="btn-mute" class="volume-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg>
+        </button>
+        <div class="volume-slider-wrapper">
+          <input type="range" id="volume-slider" min="0" max="100" value="80" class="custom-slider" aria-label="Âm lượng">
+          <div id="volume-fill" class="progress-fill" style="width: 80%;"></div>
+        </div>
+      </div>
+      <button id="btn-queue-toggle" class="queue-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+          <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+        </svg>
+      </button>
+    </div>
+  </footer>
+  <div id="queue-drawer" class="queue-drawer">
+    <div class="queue-header">
+      <div class="queue-header-left">
+        <h3>Danh sách chờ</h3>
+        <span id="queue-count-badge" class="queue-count-badge">0</span>
+      </div>
+      <div class="queue-header-actions">
+        <button id="btn-queue-clear" class="queue-clear-btn" aria-label="Xóa tất cả">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+          <span>Xóa hết</span>
+        </button>
+        <button id="btn-queue-close" class="close-btn" aria-label="Đóng danh sách chờ">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+    <div id="queue-list" class="queue-items-container"></div>
+  </div>
+  <div id="edit-modal" class="modal-overlay hidden" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Chỉnh sửa bài hát</h2>
+        <button id="btn-modal-close" class="close-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="edit-cover-section">
+          <div class="square-cover-preview">
+            <img id="modal-cover-preview" src="" alt="" class="preview-img">
+          </div>
+          <div class="cover-options">
+            <button id="btn-choose-file" class="outline-btn" type="button">Chọn ảnh</button>
+            <input type="file" id="modal-file-input" accept="image/png, image/jpeg, image/webp" style="display: none;">
+            <span class="or-text">hoặc URL:</span>
+            <input type="text" id="modal-cover-url" placeholder="https://..." class="modal-input" spellcheck="false" autocorrect="off" autocapitalize="off">
+          </div>
+        </div>
+        <div class="input-group">
+          <label for="modal-track-title">Tên bài hát</label>
+          <input type="text" id="modal-track-title" class="modal-input" placeholder="Tên bài hát" spellcheck="false" autocorrect="off" autocapitalize="off">
+        </div>
+        <div class="input-group">
+          <label for="modal-track-artist">Nghệ sĩ</label>
+          <input type="text" id="modal-track-artist" class="modal-input" placeholder="Nghệ sĩ" spellcheck="false" autocorrect="off" autocapitalize="off">
+        </div>
+        <div class="source-info-bar">
+          <span>Nguồn: <b id="modal-track-source">—</b></span>
+          <span>Thời lượng: <b id="modal-track-duration">0:00</b></span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-modal-reset" class="outline-btn" style="margin-right: auto; display: flex; align-items: center; gap: 6px; padding: 10px 16px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          <span>Đặt lại</span>
+        </button>
+        <button id="btn-modal-cancel" class="cancel-btn">Hủy</button>
+        <button id="btn-modal-save" class="primary-btn">Lưu</button>
+      </div>
+    </div>
+  </div>
+  <div id="settings-modal" class="modal-overlay hidden" style="display: none;">
+    <div class="modal-content settings-modal-content">
+      <div class="modal-header">
+        <div class="modal-header-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <h2>Cài đặt</h2>
+        </div>
+        <button id="btn-settings-close" class="close-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body settings-body">
+        <div class="setting-item-row">
+          <div class="setting-info">
+            <div class="setting-title">Giao diện (Theme)</div>
+            <div id="theme-status-desc" class="setting-subtitle">Giao diện Tối (Mặc định)</div>
+          </div>
+          <div class="setting-control">
+            <label class="theme-switch">
+              <input type="checkbox" id="theme-toggle-input">
+              <span class="theme-lever">
+                <svg class="lever-icon-moon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                <svg class="lever-icon-sun" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+              </span>
+            </label>
+          </div>
+        </div>
+        <div class="setting-item-row color-setting-row">
+          <div class="setting-info">
+            <div class="setting-title">Màu chủ đạo (Accent Color)</div>
+            <div id="accent-status-desc" class="setting-subtitle">Xanh lá (Spotify)</div>
+          </div>
+          <div class="setting-control color-setting-control">
+            <div class="color-palette-wrapper">
+              <button type="button" class="color-dot active" data-color="#1db954" data-name="Xanh lá (Spotify)" style="background-color: #1db954;"></button>
+              <button type="button" class="color-dot" data-color="#3b82f6" data-name="Xanh dương" style="background-color: #3b82f6;"></button>
+              <button type="button" class="color-dot" data-color="#a855f7" data-name="Tím Neon" style="background-color: #a855f7;"></button>
+              <button type="button" class="color-dot" data-color="#ef4444" data-name="Đỏ Ruby" style="background-color: #ef4444;"></button>
+              <button type="button" class="color-dot" data-color="#f59e0b" data-name="Vàng Cam" style="background-color: #f59e0b;"></button>
+              <button type="button" class="color-dot" data-color="#06b6d4" data-name="Xanh Cyan" style="background-color: #06b6d4;"></button>
+              <button type="button" class="color-dot" data-color="#ec4899" data-name="Hồng Rose" style="background-color: #ec4899;"></button>
+              <label class="custom-color-picker-btn">
+                <input type="color" id="accent-color-input" value="#1db954">
+                <div id="custom-color-preview" class="custom-color-circle" style="background-color: #1db954;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="setting-item-row">
+          <div class="setting-info">
+            <div class="setting-title">Nhãn nền tảng bài hát</div>
+            <div id="source-badge-status-desc" class="setting-subtitle">Đang hiển thị nhãn (Spotify, YouTube, SoundCloud)</div>
+          </div>
+          <div class="setting-control">
+            <label class="setting-toggle-switch">
+              <input type="checkbox" id="badge-toggle-input" checked>
+              <span class="setting-toggle-lever"></span>
+            </label>
+          </div>
+        </div>
+        <section id="appearance-settings" class="recommendation-settings personal-settings" aria-labelledby="appearance-heading">
+          <div class="personal-settings-heading"><div><span class="personal-eyebrow">KHÔNG GIAN CỦA BẠN</span><h3 id="appearance-heading">Màu sắc &amp; nền ứng dụng</h3></div><button id="appearance-reset" type="button" class="outline-btn">Mặc định</button></div>
+          <p class="setting-subtitle">Xem thay đổi ngay, tự lưu khi chỉnh. Màu nền được phối theo chế độ sáng/tối để chữ dễ đọc.</p>
+          <div class="personal-field-row"><label for="accent-hex-input">Màu chủ đạo</label><input id="accent-hex-input" class="personal-input color-hex-input" type="text" value="#1db954" maxlength="7" spellcheck="false" aria-label="Mã màu chủ đạo #RRGGBB"></div>
+          <div class="appearance-presets" role="group" aria-label="Bảng màu có sẵn">
+            <button type="button" data-background-preset="violet" aria-pressed="false"><span class="palette-swatch palette-violet"></span>Tím đêm</button>
+            <button type="button" data-background-preset="ocean" aria-pressed="false"><span class="palette-swatch palette-ocean"></span>Đại dương</button>
+            <button type="button" data-background-preset="rose" aria-pressed="false"><span class="palette-swatch palette-rose"></span>Hồng khói</button>
+          </div>
+          <div class="personal-field-row"><label for="appearance-mode">Kiểu nền</label><select id="appearance-mode" class="personal-input"><option value="default">Nền mặc định</option><option value="solid">Một màu</option><option value="gradient">Chuyển sắc hai màu</option></select></div>
+          <div class="appearance-colors">
+            <div><label for="appearance-color-0">Màu nền chính</label><div class="appearance-color-control"><input id="appearance-color-0" type="color" value="#182332" aria-label="Chọn màu nền chính"><input id="appearance-hex-0" type="text" class="personal-input color-hex-input" maxlength="7" value="#182332" aria-label="Mã màu nền chính" spellcheck="false"></div></div>
+            <div><label for="appearance-color-1">Màu chuyển sắc</label><div class="appearance-color-control"><input id="appearance-color-1" type="color" value="#39244a" aria-label="Chọn màu chuyển sắc"><input id="appearance-hex-1" type="text" class="personal-input color-hex-input" maxlength="7" value="#39244a" aria-label="Mã màu chuyển sắc" spellcheck="false"></div></div>
+          </div>
+          <label class="personal-checkbox" for="appearance-blur-enabled"><input id="appearance-blur-enabled" type="checkbox" checked>Nền mờ theo ảnh bìa khi phát nhạc</label>
+          <div class="appearance-blur-control"><label for="appearance-blur-slider">Độ mờ</label><input id="appearance-blur-slider" type="range" min="10" max="60" step="1" value="24"><output id="appearance-blur-value" for="appearance-blur-slider">24 px</output></div>
+          <p id="appearance-status" class="setting-subtitle" role="status" aria-live="polite">Tự nhớ giao diện khi mở lại app.</p>
+        </section>
+        <section id="discord-settings" class="recommendation-settings personal-settings" aria-labelledby="discord-heading">
+          <div class="personal-settings-heading"><div><span class="personal-eyebrow">CHIA SẺ NHỊP NGHE</span><h3 id="discord-heading">Discord Rich Presence</h3></div><label class="setting-toggle-switch"><input type="checkbox" id="discord-enabled" checked aria-label="Hiển thị hoạt động nghe nhạc trên Discord"><span class="setting-toggle-lever"></span></label></div>
+          <p class="setting-subtitle">Chỉnh phần hoạt động nghe nhạc hiển thị trên hồ sơ Discord.</p>
+          <div id="discord-preview" class="discord-preview" aria-label="Xem trước hoạt động Discord">
+            <div class="discord-preview-heading">ĐANG NGHE NHẠC <span>XEM TRƯỚC</span></div>
+            <div class="discord-preview-body"><div class="discord-preview-art"><span id="discord-preview-image-placeholder">Ảnh bìa</span><img id="discord-preview-image" alt="Ảnh hoạt động Discord" hidden></div><div class="discord-preview-copy"><strong id="discord-preview-app-name">NgQuang Music App</strong><span id="discord-preview-details">Tên bài hát</span><span id="discord-preview-state">Tên nghệ sĩ</span></div></div>
+          </div>
+          <p id="discord-preview-note" class="setting-subtitle"></p>
+          <label class="personal-field" for="discord-details"><span>details <small>Dòng nội dung chính</small></span><input id="discord-details" type="text" class="personal-input" maxlength="128" value="{title}" autocomplete="off" spellcheck="false"></label>
+          <label class="personal-field" for="discord-state"><span>state <small>Dòng nội dung bên dưới</small></span><input id="discord-state" type="text" class="personal-input" maxlength="128" value="{artist}" autocomplete="off" spellcheck="false"></label>
+          <label class="personal-field" for="discord-large-image"><span>large_image <small>Ảnh lớn</small></span><input id="discord-large-image" type="text" class="personal-input" maxlength="256" value="{cover}" placeholder="{cover}, https://… hoặc tên asset" autocomplete="off" spellcheck="false"></label>
+          <p class="setting-subtitle">Dùng <code>{cover}</code> để theo ảnh bìa; để trống để ẩn ảnh. Tên asset cần thuộc ứng dụng Discord bạn chọn.</p>
+          <p class="discord-template-help">Biến tự đổi theo bài: <code>{title}</code> <code>{artist}</code> <code>{album}</code> <code>{source}</code> <code>{status}</code>. Để trống state/details để ẩn dòng đó.</p>
+          <details class="discord-advanced"><summary>Ứng dụng Discord riêng</summary><label class="personal-field" for="discord-client-id"><span>Application ID</span><input id="discord-client-id" class="personal-input" type="text" inputmode="numeric" maxlength="20" placeholder="Để trống để dùng app hiện tại" autocomplete="off"></label><p class="setting-subtitle">Tên hoạt động do ứng dụng Discord này quyết định. Không cần token tài khoản.</p></details>
+          <div class="personal-settings-actions"><button id="discord-save" type="button" class="home-action-btn" disabled>Lưu Discord</button><button id="discord-use-track" type="button" class="outline-btn">Theo bài hát</button><button id="discord-revert" type="button" class="outline-btn" disabled>Hoàn tác</button></div>
+          <p id="discord-status" class="setting-subtitle" role="status" aria-live="polite"></p>
+        </section>
+        <div id="spotify-settings" class="recommendation-settings spotify-settings">
+          <div class="setting-title">Kết nối Spotify</div><p class="setting-subtitle">Tìm hồ sơ, ảnh nghệ sĩ, bài hát và album từ Spotify. Các bài trong danh mục được mở trên Spotify.</p>
+          <details class="spotify-setup"><summary>Cấu hình Spotify API</summary><label for="spotify-client-id">Client ID</label><input id="spotify-client-id" type="text" maxlength="32" autocomplete="off" placeholder="Client ID trong Spotify Developer Dashboard"><p class="setting-subtitle">Đăng ký Redirect URI: <code>http://127.0.0.1:43821/callback</code>. App dùng PKCE, không cần Client Secret.</p><p class="setting-subtitle">Development Mode cần chủ app có Premium và người dùng nằm trong danh sách cho phép của Spotify.</p><button id="btn-save-spotify-id" class="home-action-btn" type="button">Lưu Client ID</button></details>
+          <div class="profile-actions"><button id="btn-connect-spotify" class="home-action-btn" type="button">Kết nối Spotify</button><button id="btn-disconnect-spotify" class="text-action hidden" type="button">Ngắt kết nối</button></div><p id="spotify-connection-status" class="setting-subtitle" role="status" aria-live="polite">Chưa kết nối. Phiên đăng nhập chỉ giữ trong lần mở app này.</p>
+        </div>
+        <div id="recommendation-settings" class="recommendation-settings">
+          <div class="setting-info">
+            <div class="setting-title">Gợi ý theo gu của bạn</div>
+            <div id="recommendation-profile-summary" class="setting-subtitle">Gợi ý thay đổi theo cách bạn nghe và yêu thích nhạc.</div>
+          </div>
+          <div id="music-preferences" class="music-preferences">
+            <label class="setting-title" for="favorite-artist-input">Nghệ sĩ ưa thích</label>
+            <p class="setting-subtitle">Thêm tối đa 20 nghệ sĩ. Nhập tên rồi bấm Thêm hoặc Enter.</p>
+            <div class="favorite-artist-input-row">
+              <input id="favorite-artist-input" type="text" maxlength="240" autocomplete="off" placeholder="Ví dụ: Sơn Tùng M-TP, SOOBIN">
+              <button id="btn-add-favorite-artist" type="button" class="home-action-btn">Thêm</button>
+            </div>
+            <div id="favorite-artists-list" class="favorite-artists-list" aria-label="Nghệ sĩ ưa thích đã chọn"></div>
+            <div class="setting-title" id="favorite-genres-label">Thể loại ưa thích</div>
+            <p class="setting-subtitle">Chọn tối đa 6 thể loại hoặc phong cách. App vẫn trộn thêm nhạc mới để bạn khám phá.</p>
+            <div id="favorite-genres-list" class="favorite-genres-list" role="group" aria-labelledby="favorite-genres-label"></div>
+            <div class="music-preferences-footer">
+              <button id="btn-save-music-preferences" type="button" class="home-action-btn" disabled>Lưu gu nhạc</button>
+              <p id="music-preferences-status" class="setting-subtitle" role="status" aria-live="polite"></p>
+            </div>
+          </div>
+          <div class="setting-item-row">
+            <label class="setting-title" for="recommendation-discovery-slider">Trộn thêm nhạc mới</label>
+            <div class="recommendation-slider-control">
+              <input id="recommendation-discovery-slider" type="range" min="0" max="60" step="5" value="30">
+              <output id="recommendation-discovery-value" for="recommendation-discovery-slider">30%</output>
+            </div>
+          </div>
+          <p class="setting-subtitle">Ưu tiên bài cùng gu, xen kẽ nhạc và nghệ sĩ mới khi có đủ bài phù hợp.</p>
+          <details class="recommendation-advanced">
+            <summary>Mở rộng dữ liệu khám phá</summary>
+            <p class="setting-subtitle">Có thể thêm khóa Last.fm để lấy bài hát và nghệ sĩ tương tự. Gợi ý theo thói quen nghe vẫn hoạt động khi để trống.</p>
+            <label class="setting-title" for="lastfm-api-key">Last.fm API key</label>
+            <div class="recommendation-key-row">
+              <input id="lastfm-api-key" type="password" autocomplete="off" spellcheck="false" maxlength="32" placeholder="Khóa Last.fm (tùy chọn)">
+              <button id="btn-save-lastfm-key" type="button" class="home-action-btn">Lưu</button>
+            </div>
+            <p id="lastfm-key-status" class="setting-subtitle" role="status"></p>
+          </details>
+          <button id="btn-reset-music-taste" type="button" class="home-action-btn">Đặt lại gu nhạc</button>
+        </div>
+        <div id="playback-settings" class="recommendation-settings">
+          <div class="setting-title">Tốc độ phát &amp; cao độ</div>
+          <div class="speed-slider-row"><label for="playback-speed-slider">Nhanh / chậm</label><input type="range" id="playback-speed-slider" min="0.5" max="2" step="0.05" value="1"><output id="playback-speed-value" for="playback-speed-slider">1×</output></div>
+          <div class="speed-presets"><button type="button" data-speed-preset="0.5">0,5×</button><button type="button" data-speed-preset="0.75">0,75×</button><button type="button" data-speed-preset="1">1×</button><button type="button" data-speed-preset="1.25">1,25×</button><button type="button" data-speed-preset="1.5">1,5×</button><button type="button" data-speed-preset="2">2×</button></div>
+          <label class="speed-pitch-toggle" for="preserve-pitch-input"><input type="checkbox" id="preserve-pitch-input" checked>Giữ cao độ giọng hát</label><p id="speed-mode-description" class="setting-subtitle">Đổi tốc độ, giữ cao độ giọng hát.</p>
+          <div class="speed-effects"><button id="speed-slow-deep" type="button" class="outline-btn">Chậm &amp; trầm</button><button id="speed-fast-high" type="button" class="outline-btn">Nhanh &amp; cao</button><button id="speed-reset" type="button" class="outline-btn">Về bản gốc</button></div>
+        </div>
+        <div class="recommendation-settings eq-settings-row">
+          <div><h3 class="setting-title">EQ riêng cho từng bài</h3><p id="eq-settings-status" class="setting-subtitle">Phát một bài rồi mở EQ để chỉnh.</p></div>
+          <button type="button" class="outline-btn" data-eq-open aria-expanded="false" aria-controls="eq-modal" disabled>Mở EQ</button>
+        </div>
+        <div id="offline-settings" class="recommendation-settings">
+          <div class="setting-item-row"><div class="setting-info"><div class="setting-title">Tự lưu nhạc để nghe offline</div><p class="setting-subtitle">Lưu đầy đủ âm thanh của bài bạn phát khi có mạng.</p></div><label class="setting-toggle-switch"><input type="checkbox" id="auto-cache-audio-input" checked aria-label="Tự lưu nhạc offline"><span class="setting-toggle-lever"></span></label></div>
+          <div class="offline-limit-row"><label for="offline-limit-select">Giới hạn dung lượng</label><select id="offline-limit-select"><option value="256">256 MB</option><option value="512">512 MB</option><option value="1024">1 GB</option><option value="2048" selected>2 GB</option><option value="4096">4 GB</option><option value="8192">8 GB</option><option value="16384">16 GB</option></select></div><p id="offline-settings-usage" class="setting-subtitle">Đã dùng 0 MB / 2 GB</p><p class="setting-subtitle">Khi đầy, app ngừng lưu bài mới. Quản lý những bản đã lưu trong Nhạc offline.</p>
+        </div>
+        <div id="music-effects-settings" class="music-effects-settings">
+          <div class="setting-info music-effects-heading">
+            <div class="setting-title">Hiệu ứng theo nhạc</div>
+            <div class="setting-subtitle">Ảnh nảy theo bass, viền ô rỗng hai bên và sóng neon cao thấp đa dạng phía dưới.</div>
+          </div>
+          <div class="setting-item-row">
+            <label class="setting-title" for="music-effect-shake">Ảnh rung theo nhịp</label>
+            <label class="setting-toggle-switch">
+              <input type="checkbox" id="music-effect-shake" checked>
+              <span class="setting-toggle-lever"></span>
+            </label>
+          </div>
+          <div class="setting-item-row">
+            <label class="setting-title" for="music-effect-waves">Sóng nhạc và viền sáng</label>
+            <label class="setting-toggle-switch">
+              <input type="checkbox" id="music-effect-waves" checked>
+              <span class="setting-toggle-lever"></span>
+            </label>
+          </div>
+          <div class="music-effect-sensitivity-row">
+            <label class="setting-title" for="music-effect-sensitivity">Độ nhạy</label>
+            <input type="range" id="music-effect-sensitivity" min="50" max="200" step="5" value="100">
+            <output id="music-effect-sensitivity-value" for="music-effect-sensitivity">100%</output>
+          </div>
+          <div class="setting-title music-color-group-title">Màu sóng phía dưới</div>
+          <div class="music-wave-colors">
+            <label for="music-neon-color-1">Sóng 1<input type="color" id="music-neon-color-1" value="#ff0030"></label>
+            <label for="music-neon-color-2">Sóng 2<input type="color" id="music-neon-color-2" value="#7564ff"></label>
+            <label for="music-neon-color-3">Sóng 3<input type="color" id="music-neon-color-3" value="#9500ed"></label>
+            <button type="button" id="music-neon-colors-reset" class="music-colors-reset">Màu như video</button>
+          </div>
+          <div class="setting-subtitle music-effects-color-note">Đường sóng sáng, thân mờ; các đỉnh đổi vị trí và độ cao mượt theo nhạc.</div>
+          <div class="setting-title music-color-group-title">Màu viền ảnh và nền</div>
+          <div class="music-wave-colors">
+            <label for="music-wave-color-1">Nét viền<input type="color" id="music-wave-color-1" value="#ffffff"></label>
+            <label for="music-wave-color-2">Nền<input type="color" id="music-wave-color-2" value="#9348ff"></label>
+            <label for="music-wave-color-3">Lớp nhấn<input type="color" id="music-wave-color-3" value="#c49bff"></label>
+            <button type="button" id="music-wave-colors-reset" class="music-colors-reset">Màu mặc định</button>
+          </div>
+        </div>
+        <div class="setting-item-row crossfade-setting-row">
+          <div class="setting-info">
+            <div class="setting-title">Nối tiếp chuyển bài mượt mà (Crossfade)</div>
+            <div id="crossfade-status-desc" class="setting-subtitle">Tắt (Bài tiếp theo chỉ phát khi bài hiện tại hết hẳn)</div>
+          </div>
+          <div class="setting-control">
+            <label class="setting-toggle-switch">
+              <input type="checkbox" id="crossfade-toggle-input">
+              <span class="setting-toggle-lever"></span>
+            </label>
+          </div>
+        </div>
+        <div id="crossfade-diagram-wrapper" class="crossfade-diagram-card" style="display: none;">
+          <div class="crossfade-card-header">
+            <div class="crossfade-header-left">
+              <span class="crossfade-badge-title">Giao thoa chuyển bài</span>
+              <span class="crossfade-badge-time"><span id="crossfade-display-seconds">5.0</span>s</span>
+            </div>
+            <div class="crossfade-presets">
+              <button type="button" class="crossfade-preset-chip active" data-preset="linear">Tuyến tính</button>
+              <button type="button" class="crossfade-preset-chip" data-preset="smooth">Êm dịu</button>
+              <button type="button" class="crossfade-preset-chip" data-preset="quick">Nhanh</button>
+            </div>
+          </div>
+          <div class="crossfade-interactive-stage" id="crossfade-stage">
+            <div id="crossfade-overlap-zone" class="crossfade-overlap-zone">
+              <div class="overlap-resizer-line"></div>
+              <div class="resizer-pill" id="overlap-resizer-pill">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l-6-7 6-7zm8 0v14l6-7-6-7z"/></svg>
+                <span id="resizer-time-text">5.0s</span>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l-6-7 6-7zm8 0v14l6-7-6-7z"/></svg>
+              </div>
+            </div>
+            <div class="crossfade-track-rect track-a-rect" id="track-a-rect">
+              <div class="track-rect-header">
+                <span class="track-rect-badge badge-a">Bài A (Đang phát)</span>
+                <span class="track-rect-status">Giảm âm lượng</span>
+              </div>
+              <svg class="crossfade-curve-svg" id="svg-track-a" viewBox="0 0 400 56" preserveAspectRatio="none">
+                <line x1="0" y1="12" x2="200" y2="12" stroke="rgba(255,255,255,0.4)" stroke-width="2" id="line-a-pre"/>
+                <path id="path-curve-a" d="M 200 12 L 400 48" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round"/>
+                <path id="area-curve-a" d="M 200 12 L 400 48 L 400 54 L 200 54 Z" fill="var(--accent)" opacity="0.18"/>
+              </svg>
+              <div class="curve-handle-point" id="handle-curve-a" style="left: 300px; top: 30px;">
+                <div class="handle-inner"></div>
+              </div>
+            </div>
+            <div class="crossfade-track-rect track-b-rect" id="track-b-rect">
+              <div class="track-rect-header">
+                <span class="track-rect-badge badge-b">Bài B (Tiếp theo)</span>
+                <span class="track-rect-status">Tăng âm lượng</span>
+              </div>
+              <svg class="crossfade-curve-svg" id="svg-track-b" viewBox="0 0 400 56" preserveAspectRatio="none">
+                <path id="path-curve-b" d="M 0 48 L 200 12" fill="none" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/>
+                <path id="area-curve-b" d="M 0 48 L 200 12 L 200 54 L 0 54 Z" fill="#38bdf8" opacity="0.18"/>
+                <line x1="200" y1="12" x2="400" y2="12" stroke="rgba(255,255,255,0.4)" stroke-width="2" id="line-b-post"/>
+              </svg>
+              <div class="curve-handle-point" id="handle-curve-b" style="left: 100px; top: 30px;">
+                <div class="handle-inner"></div>
+              </div>
+            </div>
+          </div>
+          <div class="crossfade-controls-footer">
+            <div class="crossfade-slider-row">
+              <span class="slider-label">Thời gian giao thoa:</span>
+              <input type="range" id="crossfade-duration-slider" min="1" max="12" step="0.5" value="5" class="custom-slider">
+              <span id="crossfade-seconds-tag" class="seconds-tag">5.0s</span>
+            </div>
+            <div class="crossfade-curve-tuning-row">
+              <div class="tuning-col">
+                <span class="col-title">Độ cong Bài A (Fade Out):</span>
+                <div class="tuning-slider-wrap">
+                  <span class="mini-label">Cong xuống</span>
+                  <input type="range" id="slider-curve-a" min="-1" max="1" step="0.05" value="0" class="custom-slider mini-slider">
+                  <span class="mini-label">Cong lên</span>
+                </div>
+              </div>
+              <div class="tuning-col">
+                <span class="col-title">Độ cong Bài B (Fade In):</span>
+                <div class="tuning-slider-wrap">
+                  <span class="mini-label">Cong xuống</span>
+                  <input type="range" id="slider-curve-b" min="-1" max="1" step="0.05" value="0" class="custom-slider mini-slider">
+                  <span class="mini-label">Cong lên</span>
+                </div>
+              </div>
+            </div>
+            <div class="crossfade-actions-bar">
+              <button type="button" id="btn-crossfade-test" class="outline-btn test-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="8,5 19,12 8,19"/></svg>
+                <span id="btn-crossfade-test-text">Nghe thử chuyển tiếp</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="setting-item-row">
+          <div class="setting-info">
+            <div class="setting-title">Phiên bản ứng dụng</div>
+            <div class="setting-subtitle">NgQuang Music App</div>
+          </div>
+          <div class="setting-control">
+            <span class="app-version-badge">v2.0.0</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-settings-done" class="primary-btn">Xong</button>
+      </div>
+    </div>
+  </div>
+  <div id="ab-loop-popup" class="ab-loop-popup" style="display: none;">
+    <div class="ab-popup-header">
+      <span class="ab-popup-title">Chọn đoạn phát</span>
+      <button id="btn-ab-popup-close" class="ab-popup-close-btn">&times;</button>
+    </div>
+    <div class="ab-popup-body">
+      <div class="ab-popup-time-input-row">
+        <span class="ab-time-label">Mốc:</span>
+        <input type="text" id="ab-time-input" class="ab-time-input" placeholder="mm:ss" spellcheck="false" autocorrect="off" autocapitalize="off">
+      </div>
+      <div class="ab-popup-actions">
+        <button id="btn-ab-set-point" class="ab-popup-btn primary">
+          <span id="ab-set-point-text">Đặt Start</span>
+        </button>
+        <button id="btn-ab-clear" class="ab-popup-btn danger">
+          <span>Xóa mốc</span>
+        </button>
+      </div>
+      <div class="ab-popup-info" id="ab-popup-info">
+        Chưa có mốc đoạn
+      </div>
+    </div>
+  </div>
+  <div id="add-to-playlist-modal" class="modal-overlay hidden" style="display: none;">
+    <div class="modal-content add-playlist-modal-content">
+      <div class="modal-header">
+        <h2>Thêm vào playlist</h2>
+        <button id="btn-add-playlist-modal-close" class="close-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="create-new-playlist-row">
+          <input type="text" id="new-playlist-quick-input" class="modal-input" placeholder="Tên playlist mới..." spellcheck="false" autocorrect="off" autocapitalize="off">
+          <button id="btn-create-playlist-quick" class="primary-btn btn-round-create">Tạo</button>
+        </div>
+        <div class="modal-playlists-list" id="modal-playlists-list"></div>
+      </div>
+      <div class="modal-footer add-playlist-modal-footer">
+        <button id="btn-add-playlist-cancel" class="cancel-btn">Bỏ</button>
+        <button id="btn-add-playlist-confirm" class="primary-btn">Chốt</button>
+      </div>
+    </div>
+  </div>
+  <div id="edit-playlist-modal" class="modal-overlay hidden" style="display: none;">
+    <div class="modal-content edit-playlist-modal-content">
+      <div class="modal-header">
+        <h2>Chỉnh sửa playlist</h2>
+        <button id="btn-edit-playlist-modal-close" class="close-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-edit-layout">
+          <div class="modal-cover-column">
+            <div class="modal-cover-preview-wrapper playlist-modal-cover" id="modal-playlist-cover-wrapper">
+              <img id="modal-playlist-cover-preview" src="" alt="Cover preview" class="modal-cover-preview-img" onerror="this.style.display='none'">
+              <div class="modal-cover-placeholder" id="modal-playlist-cover-placeholder">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+              </div>
+              <div class="modal-cover-overlay">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                <span>Chọn ảnh</span>
+              </div>
+            </div>
+            <input type="file" id="modal-playlist-file-input" accept="image/*" style="display: none;">
+            <button id="btn-playlist-choose-file" class="outline-btn modal-btn-full">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <span>Chọn ảnh từ máy</span>
+            </button>
+            <button id="btn-playlist-remove-cover" class="outline-btn danger modal-btn-full" style="display: none;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+              <span>Xóa ảnh tùy chỉnh</span>
+            </button>
+          </div>
+          <div class="modal-form-column">
+            <div class="form-group">
+              <label for="modal-playlist-name">Tên Playlist</label>
+              <input type="text" id="modal-playlist-name" class="modal-input" placeholder="Tên playlist..." spellcheck="false" autocorrect="off" autocapitalize="off">
+            </div>
+            <div class="form-group">
+              <label for="modal-playlist-desc">Mô tả (tùy chọn)</label>
+              <textarea id="modal-playlist-desc" class="modal-input modal-textarea" placeholder="Thêm mô tả cho playlist của bạn..." rows="3" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
+            </div>
+            <div class="form-group">
+              <label for="modal-playlist-cover-url">Hoặc dán URL ảnh</label>
+              <input type="url" id="modal-playlist-cover-url" class="modal-input" placeholder="https://..." spellcheck="false" autocorrect="off" autocapitalize="off">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-edit-playlist-cancel" class="cancel-btn">Hủy</button>
+        <button id="btn-edit-playlist-save" class="primary-btn">Lưu thay đổi</button>
+      </div>
+    </div>
+  </div>
+  <div id="confirm-delete-playlist-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="confirm-delete-playlist-title" aria-describedby="confirm-delete-playlist-desc" aria-hidden="true" style="display: none; z-index: 1050;">
+    <div class="modal-content confirm-delete-modal-content">
+      <div class="confirm-modal-body">
+        <div class="confirm-modal-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            <line x1="10" y1="11" x2="10" y2="17"></line>
+            <line x1="14" y1="11" x2="14" y2="17"></line>
+          </svg>
+        </div>
+        <div class="confirm-modal-text">
+          <h3 class="confirm-modal-title" id="confirm-delete-playlist-title">Xóa playlist?</h3>
+          <p class="confirm-modal-desc" id="confirm-delete-playlist-desc">Playlist này đang có bài hát. Hành động này không thể hoàn tác.</p>
+        </div>
+      </div>
+      <div class="confirm-modal-actions">
+        <button id="btn-confirm-delete-cancel" class="cancel-btn">Thôi</button>
+        <button id="btn-confirm-delete-ok" class="danger-btn">Xóa luôn</button>
+      </div>
+    </div>
+  </div>
+  <div id="image-viewer-modal" class="image-viewer-modal" role="dialog" aria-modal="true" aria-label="Xem ảnh bìa" style="display: none;">
+    <button type="button" id="btn-close-image-viewer" class="image-viewer-close-btn" aria-label="Đóng ảnh bìa">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+    <div id="image-viewer-backdrop" class="image-viewer-backdrop">
+      <div id="image-viewer-container" class="image-viewer-container">
+        <img id="image-viewer-img" alt="Ảnh bìa" class="image-viewer-img" role="button" tabindex="0" aria-label="Phóng to ảnh bìa" aria-pressed="false" draggable="false">
+      </div>
+    </div>
+    <div id="image-viewer-context-menu" class="image-viewer-context-menu" style="display: none;">
+      <button type="button" id="btn-image-save" class="image-menu-item">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        <span>Lưu ảnh</span>
+      </button>
+      <button type="button" id="btn-image-copy" class="image-menu-item">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        </svg>
+        <span>Sao chép ảnh</span>
+      </button>
+    </div>
+  </div>
+  <div id="track-floating-menu" class="track-floating-menu hidden" style="display: none;">
+    <button id="track-menu-fav" class="action-menu-item">
+      <span class="menu-item-icon" id="track-menu-fav-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+      </span>
+      <span id="track-menu-fav-text">Yêu thích</span>
+    </button>
+    <button id="track-menu-add-playlist" class="action-menu-item">
+      <span class="menu-item-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </span>
+      <span>Thêm vào playlist</span>
+    </button>
+    <button id="track-menu-edit" class="action-menu-item">
+      <span class="menu-item-icon">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      </span>
+      <span>Chỉnh sửa bài hát</span>
+    </button>
+    <div class="action-menu-divider"></div>
+    <button id="track-menu-copy-url" class="action-menu-item">
+      <span class="menu-item-icon">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+      </span>
+      <span>Sao chép liên kết</span>
+    </button>
+    <button id="track-menu-copy-title" class="action-menu-item">
+      <span class="menu-item-icon">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line></svg>
+      </span>
+      <span>Sao chép tên bài hát</span>
+    </button>
+    <button id="track-menu-delete" class="action-menu-item danger" style="display: none;">
+      <span class="menu-item-icon">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+      </span>
+      <span>Xóa khỏi thư viện</span>
+    </button>
+  </div>
+  <div id="toast-notification" class="toast-notification"></div>
+  <audio id="audio-engine" crossorigin="anonymous" preload="auto"></audio>
+  <audio id="audio-engine-secondary" crossorigin="anonymous" preload="auto"></audio>
+  <div id="reset-taste-modal" class="modal-overlay hidden" style="display:none;">
+    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="reset-taste-title">
+      <div class="modal-header"><h2 id="reset-taste-title">Đặt lại gu nhạc?</h2></div>
+      <p class="setting-subtitle">Xóa các lượt nghe đã ghi nhận và danh sách bài đã ẩn. Nghệ sĩ, thể loại ưa thích, các bài Yêu thích và playlist của bạn được giữ lại.</p>
+      <div class="modal-footer">
+        <button id="btn-cancel-reset-taste" type="button" class="home-action-btn">Giữ gu hiện tại</button>
+        <button id="btn-confirm-reset-taste" type="button" class="home-action-btn">Đặt lại</button>
+      </div>
+    </div>
+  </div>
+  <div id="eq-modal" class="modal-overlay" aria-hidden="true" hidden>
+    <div class="modal-content eq-panel" role="dialog" aria-modal="true" aria-labelledby="eq-heading">
+      <div class="eq-heading-row"><div><span class="page-eyebrow">ÂM SẮC CỦA RIÊNG BẠN</span><h2 id="eq-heading">EQ cho bài này</h2></div><button type="button" id="eq-close" class="eq-close-btn" aria-label="Đóng EQ">×</button></div>
+      <div class="eq-song"><strong id="eq-track-title">Chọn bài hát để chỉnh EQ</strong><span id="eq-track-artist">Mỗi bài có một bộ chỉnh riêng.</span></div>
+      <div class="eq-toolbar"><label class="eq-toggle"><input type="checkbox" id="eq-enabled" checked>Bật EQ cho bài này</label><button type="button" id="eq-reset" class="outline-btn">Về mức gốc</button></div>
+      <div class="eq-presets" role="group" aria-label="Preset EQ cho bài này"><span>Preset</span><button type="button" data-eq-preset="original" aria-pressed="true">Bản gốc</button><button type="button" data-eq-preset="gentle" aria-pressed="false">Giảm chói</button></div>
+      <p id="eq-preset-description" class="eq-preset-description">Bản gốc · Các dải tần ở 0 dB.</p>
+      <div class="eq-control-area"><div class="eq-scale" aria-hidden="true"><span>+12</span><span>0</span><span>−12</span></div><div id="eq-bands" class="eq-bands"></div></div>
+      <div class="eq-band-groups" aria-hidden="true"><span>TRẦM</span><span>TRUNG</span><span>CAO</span></div>
+      <p id="eq-headroom" class="setting-subtitle"></p><p id="eq-save-status" class="eq-save-status" role="status"></p>
+    </div>
+  </div>
+  <div id="speed-popover" class="speed-popover" role="dialog" aria-label="Điều chỉnh tốc độ" hidden>
+    <div class="speed-popover-title"><strong>Tốc độ phát</strong><output id="quick-speed-value" for="quick-speed-slider">1×</output></div><input type="range" id="quick-speed-slider" min="0.5" max="2" step="0.05" value="1" aria-label="Tốc độ phát">
+    <div class="speed-presets"><button type="button" data-speed-preset="0.5">0,5×</button><button type="button" data-speed-preset="0.75">0,75×</button><button type="button" data-speed-preset="1">1×</button><button type="button" data-speed-preset="1.25">1,25×</button><button type="button" data-speed-preset="1.5">1,5×</button><button type="button" data-speed-preset="2">2×</button></div><label class="speed-pitch-toggle" for="quick-preserve-pitch"><input id="quick-preserve-pitch" type="checkbox" checked>Giữ cao độ giọng hát</label>
+    <p id="quick-speed-description" class="setting-subtitle" role="status">Cùng bài hát, giữ giọng gốc khi đổi tốc độ.</p>
+  </div>
+  <div id="clear-offline-modal" class="modal-overlay" hidden><div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="clear-offline-title"><div class="modal-header"><h2 id="clear-offline-title">Xóa bản nhạc offline?</h2></div><p class="setting-subtitle">Xóa các tệp âm thanh đã lưu và hủy những bài đang tải. Bạn cần có mạng để tải lại. Bài yêu thích, playlist và lịch sử nghe vẫn được giữ.</p><div class="modal-footer"><button id="offline-clear-cancel" type="button" class="outline-btn">Giữ lại</button><button id="offline-clear-confirm" type="button" class="primary-btn">Xóa bản offline</button></div></div></div>
+  <script src="KetNoiTauri.js"></script>
+  <script src="TienIch.js"></script>
+  <script src="EqualizerBaiHat.js"></script>
+  <script src="HieuUngAmThanh.js"></script>
+  <script src="GoiYAmNhac.js"></script>
+  <script src="KhamPhaNhac.js"></script>
+  <script src="NhacOfflineVaTocDo.js"></script>
+  <script src="ChuanBiBaiTiep.js"></script>
+  <script src="GiaoDienMoi.js"></script>
+  <script src="TuyChinhUngDung.js"></script>
+  <script src="UngDung.js"></script>
+</body>
+</html>

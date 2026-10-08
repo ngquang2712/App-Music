@@ -1,0 +1,38 @@
+{
+  "currentTrack": {
+    "id": "IfH9POevkC4",
+    "source": "youtube",
+    "title": "Low G | 'Tán Gái Phòng Trà' Playlist",
+    "artist": "Low G",
+    "album": null,
+    "duration": 918,
+    "durationFormatted": "15:18",
+    "cover": "https://i.ytimg.com/vi/IfH9POevkC4/hq720.jpg?sqp=-oaymwEcCNAFEJQDSFXyq4qpAw4IARUAAIhCGAFwAcABBg==&rs=AOn4CLChnB4spU-OEgDhUPLbFh1oEmQZUw",
+    "url": "https://www.youtube.com/watch?v=IfH9POevkC4",
+    "views": 549612,
+    "originalTitle": "Low G | 'Tán Gái Phòng Trà' Playlist",
+    "originalArtist": "Low G",
+    "originalCover": "https://i.ytimg.com/vi/IfH9POevkC4/hq720.jpg?sqp=-oaymwEcCNAFEJQDSFXyq4qpAw4IARUAAIhCGAFwAcABBg==&rs=AOn4CLChnB4spU-OEgDhUPLbFh1oEmQZUw"
+  },
+  "currentTime": 208.452483,
+  "isPlaying": true,
+  "queue": [
+    {
+      "id": "IfH9POevkC4",
+      "source": "youtube",
+      "title": "Low G | 'Tán Gái Phòng Trà' Playlist",
+      "artist": "Low G",
+      "album": null,
+      "duration": 918,
+      "durationFormatted": "15:18",
+      "cover": "https://i.ytimg.com/vi/IfH9POevkC4/hq720.jpg?sqp=-oaymwEcCNAFEJQDSFXyq4qpAw4IARUAAIhCGAFwAcABBg==&rs=AOn4CLChnB4spU-OEgDhUPLbFh1oEmQZUw",
+      "url": "https://www.youtube.com/watch?v=IfH9POevkC4",
+      "views": 549612,
+      "originalTitle": "Low G | 'Tán Gái Phòng Trà' Playlist",
+      "originalArtist": "Low G",
+      "originalCover": "https://i.ytimg.com/vi/IfH9POevkC4/hq720.jpg?sqp=-oaymwEcCNAFEJQDSFXyq4qpAw4IARUAAIhCGAFwAcABBg==&rs=AOn4CLChnB4spU-OEgDhUPLbFh1oEmQZUw"
+    }
+  ],
+  "queueIndex": 0,
+  "abSegments": {}
+}

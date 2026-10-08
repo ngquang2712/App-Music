@@ -1,0 +1,71 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "NgQuang Music App",
+  "version": "2.0.0",
+  "identifier": "com.omnimusic.player",
+  "build": {
+    "frontendDist": [
+      "../GiaoDien/index.html",
+      "../GiaoDien/DinhDang.css",
+      "../GiaoDien/KetNoiTauri.js",
+      "../GiaoDien/TienIch.js",
+      "../GiaoDien/HieuUngAmThanh.js",
+      "../GiaoDien/EqualizerBaiHat.js",
+      "../GiaoDien/GoiYAmNhac.js",
+      "../GiaoDien/KhamPhaNhac.js",
+      "../GiaoDien/NhacOfflineVaTocDo.js",
+      "../GiaoDien/ChuanBiBaiTiep.js",
+      "../GiaoDien/UngDung.js",
+      "../GiaoDien/favicon-32x32.png",
+      "../GiaoDien/GiaoDienMoi.js",
+      "../GiaoDien/GiaoDienMoi.css",
+      "../GiaoDien/TuyChinhUngDung.js",
+      "../GiaoDien/TuyChinhUngDung.css"
+    ]
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "NgQuang Music App",
+        "width": 1240,
+        "height": 820,
+        "minWidth": 960,
+        "minHeight": 650,
+        "resizable": true,
+        "fullscreen": false,
+        "decorations": false,
+        "center": true,
+        "transparent": false,
+        "dragDropEnabled": false,
+        "label": "main"
+      }
+    ],
+    "withGlobalTauri": true,
+    "security": {
+      "csp": null,
+      "capabilities": [
+        {
+          "identifier": "main-capability",
+          "windows": [
+            "main"
+          ],
+          "permissions": [
+            "core:default"
+          ]
+        }
+      ]
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "../GiaoDien/favicon-32x32.png",
+      "../GiaoDien/favicon.png",
+      "../GiaoDien/favicon.ico"
+    ],
+    "resources": {
+      "../DuLieu/ThucThi/": "DuLieu/ThucThi/"
+    }
+  }
+}

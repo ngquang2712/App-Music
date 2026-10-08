@@ -1,0 +1,46 @@
+ .gitignore                                         |  20 [32m++[m
+ GiaoDien/DieuKhienVaKhamPha.css                    |  33 [32m+++[m
+ GiaoDien/DieuKhienVaKhamPha.js                     |  97 [32m+++++++[m
+ GiaoDien/EqualizerBaiHat.js                        |  14 [32m+[m
+ GiaoDien/KetNoiTauri.js                            |   1 [32m+[m
+ GiaoDien/TuyChinhUngDung.css                       |  75 [32m+++++[m
+ GiaoDien/TuyChinhUngDung.js                        | 233 [32m+++++++++++++++[m
+ GiaoDien/UngDung.js                                |  37 [32m+[m[31m--[m
+ GiaoDien/index.html                                |  39 [32m+++[m
+ MaNguonTauri/src/commands.rs                       |  19 [32m+[m[31m-[m
+ MaNguonTauri/src/lib.rs                            |   9 [32m+[m[31m-[m
+ MaNguonTauri/src/models.rs                         |  38 [32m+++[m
+ MaNguonTauri/src/services/.gitignore               |   6 [32m+[m[31m-[m
+ MaNguonTauri/src/services/discord.rs               | 201 [32m+++++++[m[31m------[m
+ MaNguonTauri/src/services/library.rs               |  27 [32m++[m
+ .../dep-lib-app_lib                                | Bin [31m4188[m -> [32m4710[m bytes
+ .../output-lib-app_lib                             |   4 [31m-[m
+ MaNguonTauri/target/release/app_lib.d              |   2 [32m+[m[31m-[m
+ MaNguonTauri/target/release/app_lib.dll            | Bin [31m464896[m -> [32m464896[m bytes
+ MaNguonTauri/target/release/app_lib.dll.exp        | Bin [31m806[m -> [32m806[m bytes
+ MaNguonTauri/target/release/app_lib.lib            | Bin [31m135054112[m -> [32m135495824[m bytes
+ MaNguonTauri/target/release/app_lib.pdb            | Bin [31m2568192[m -> [32m2568192[m bytes
+ .../build-script-build.exe                         | Bin [31m8821760[m -> [32m8821760[m bytes
+ .../build_script_build-a33653cd073af19b.exe        | Bin [31m8821760[m -> [32m8821760[m bytes
+ .../build_script_build-a33653cd073af19b.pdb        | Bin [31m11350016[m -> [32m11350016[m bytes
+ .../build_script_build.pdb                         | Bin [31m11350016[m -> [32m11350016[m bytes
+ MaNguonTauri/target/release/deps/app_lib.d         |  48 [32m++[m[31m--[m
+ MaNguonTauri/target/release/deps/app_lib.dll       | Bin [31m464896[m -> [32m464896[m bytes
+ MaNguonTauri/target/release/deps/app_lib.dll.exp   | Bin [31m806[m -> [32m806[m bytes
+ MaNguonTauri/target/release/deps/app_lib.lib       | Bin [31m135054112[m -> [32m135495824[m bytes
+ MaNguonTauri/target/release/deps/app_lib.pdb       | Bin [31m2568192[m -> [32m2568192[m bytes
+ MaNguonTauri/target/release/deps/libapp_lib.rlib   | Bin [31m50724902[m -> [32m51332054[m bytes
+ .../target/release/deps/omni_music_player.exe      | Bin [31m16062464[m -> [32m16136704[m bytes
+ .../target/release/deps/omni_music_player.pdb      | Bin [31m9482240[m -> [32m9506816[m bytes
+ MaNguonTauri/target/release/libapp_lib.d           |   2 [32m+[m[31m-[m
+ MaNguonTauri/target/release/libapp_lib.rlib        | Bin [31m50724902[m -> [32m51332054[m bytes
+ MaNguonTauri/target/release/omni-music-player.d    |   2 [32m+[m[31m-[m
+ MaNguonTauri/target/release/omni-music-player.exe  | Bin [31m16062464[m -> [32m16136704[m bytes
+ MaNguonTauri/target/release/omni_music_player.pdb  | Bin [31m9482240[m -> [32m9506816[m bytes
+ MaNguonTauri/tauri.conf.json                       |   4 [32m+[m[31m-[m
+ UngDungChaySan/NgQuang Music App.exe               | Bin [31m16062464[m -> [32m0[m bytes
+ UngDungChaySan/data/config/config.json             |  51 [32m+++[m[31m-[m
+ UngDungChaySan/data/config/playback.json           | 319 [32m++[m[31m-------------------[m
+ UngDungChaySan/data/library/listening.json         |   2 [32m+[m[31m-[m
+ UngDungChaySan/data/library/listening.json.bak     |   2 [32m+[m[31m-[m
+ 45 files changed, 812 insertions(+), 473 deletions(-)

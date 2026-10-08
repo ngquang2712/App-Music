@@ -1,0 +1,128 @@
+{
+  "discordRpcEnabled": true,
+  "discordClientId": "1363540875749228716",
+  "discordLargeImage": "https://cdn.discordapp.com/guilds/1119645790604890275/users/915159524325879839/avatars/a0e15a3ab499ca681f7396a46b0a281b.png?size=1024",
+  "discordState": "Ruiwa",
+  "discordDetails": ":33",
+  "appearance": {
+    "backgroundMode": "gradient",
+    "backgroundColor": "#4d243d",
+    "backgroundColor2": "#9d426b",
+    "coverBlurEnabled": true,
+    "coverBlurPx": 60
+  },
+  "volume": 0.58,
+  "repeatMode": "off",
+  "shuffle": false,
+  "theme": "dark",
+  "accentColor": "#f6a6c4",
+  "sidebarExpanded": false,
+  "showSourceBadges": true,
+  "crossfadeEnabled": false,
+  "crossfadeDuration": 5.0,
+  "crossfadeCurveA": 0.0,
+  "crossfadeCurveB": 0.0,
+  "recommendationDiscoveryPercent": 30,
+  "lastfmApiKey": "",
+  "favoriteArtists": [
+    "Sơn Tùng M-TP",
+    "Jack - J97",
+    "Quang Đăng Trần",
+    "Low G",
+    "Đen"
+  ],
+  "favoriteGenres": [
+    "lofi",
+    "ballad",
+    "remix"
+  ],
+  "favoriteArtistProfiles": [
+    {
+      "id": "itunes:705007874",
+      "name": "Sơn Tùng M-TP",
+      "picture": "",
+      "url": "https://music.apple.com/vn/artist/s%C6%A1n-t%C3%B9ng-m-tp/705007874?uo=4",
+      "provider": "itunes",
+      "genres": [
+        "Pop"
+      ]
+    },
+    {
+      "id": "itunes:1532718030",
+      "name": "Jack - J97",
+      "picture": "",
+      "url": "https://music.apple.com/vn/artist/jack-j97/1532718030?uo=4",
+      "provider": "itunes",
+      "genres": [
+        "Pop"
+      ]
+    },
+    {
+      "id": "itunes:1508544001",
+      "name": "Quang Đăng Trần",
+      "picture": "",
+      "url": "https://music.apple.com/vn/artist/quang-%C4%91%C4%83ng-tr%E1%BA%A7n/1508544001?uo=4",
+      "provider": "itunes",
+      "genres": [
+        "Pop"
+      ]
+    },
+    {
+      "id": "itunes:1537153447",
+      "name": "Low G",
+      "picture": "",
+      "url": "https://music.apple.com/vn/artist/low-g/1537153447?uo=4",
+      "provider": "itunes",
+      "genres": [
+        "Hip-Hop/Rap"
+      ]
+    },
+    {
+      "id": "itunes:1437864176",
+      "name": "Đen",
+      "picture": "",
+      "url": "https://music.apple.com/vn/artist/%C4%91en/1437864176?uo=4",
+      "provider": "itunes",
+      "genres": [
+        "Hip-Hop/Rap"
+      ]
+    }
+  ],
+  "spotifyClientId": "",
+  "autoCacheAudio": true,
+  "offlineCacheLimitMb": 2048,
+  "playbackSpeed": 1.0,
+  "preservePitch": true,
+  "trackEqualizers": {
+    "[\"youtube\",\"CrjxonwhLb8\"]": {
+      "enabled": true,
+      "gainsDb": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -1.0,
+        -2.0,
+        -1.5,
+        0.0
+      ]
+    },
+    "[\"youtube\",\"qzK5je4-pNc\"]": {
+      "enabled": true,
+      "gainsDb": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -1.0,
+        -2.0,
+        -1.5,
+        0.0
+      ]
+    }
+  }
+}
